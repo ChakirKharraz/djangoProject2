@@ -20,6 +20,7 @@ class Game(models.Model):
     title = models.CharField(max_length=100)
     date_posted = models.DateTimeField(default=timezone.now)
     game_author = models.ForeignKey(User, on_delete=models.CASCADE)
+    game_player2 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='game_player2')
     finished = models.BooleanField(default=False)
     room_code = models.CharField(max_length=100)
     grid_size = models.PositiveIntegerField(default=3)
