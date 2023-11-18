@@ -1,0 +1,42 @@
+{% extends "blog/base.html" %}
+{% load static %}
+{% block content %}
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/game.css' %}">
+
+
+    <h1>{{ object.title }}</h1>
+    <p>Grid Size: {{ object.grid_size }}</p>
+    <p>Alignment: {{ object.win_size }}</p>
+    <p>room_code: {{ object.room_code }}</p>
+
+
+    <table class="game_tbl">
+        {% for row in "x"|ljust:object.grid_size %}
+            <tr>
+                {% for col in "x"|ljust:object.grid_size %}
+                    <td>
+                        <button class="BlockBtn" id="BlockBtn{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
+                                data-symbol="{{ user.profile.symbol }}"
+                                onclick="btnClk('{{ forloop.parentloop.counter }}', '{{ forloop.counter }}')"></button>
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        function btnClk(row, col) {
+            // Récupérer l'élément bouton cliqué
+            var button = document.getElementById("BlockBtn" + row + "_" + col);
+
+            // Récupérer la valeur de data-symbol
+            var dataSymbol = button.getAttribute("data-symbol");
+
+            // Afficher la valeur à l'intérieur de la cellule
+            button.innerHTML = dataSymbol;
+
+            button.disabled = true;
+        }
+    </script>
+
+{% endblock %}
