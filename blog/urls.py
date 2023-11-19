@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import PostListView, PostDetailView, PostCreateView,PostUpdateView,PostDeleteView,UserPostListView
 from . import views
-from .views import GameCreateView, GameDetailView
+from .views import GameCreateView, GameDetailView, GameListView, JoinGameView
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -13,5 +13,6 @@ urlpatterns = [
     path('about/', views.about, name='blog-about'),
     path('create/', GameCreateView.as_view(), name='game_create'),
     path('game/<int:pk>/', GameDetailView.as_view(), name='play'),
-
+    path('list/', GameListView.as_view(), name='game_list'),
+    path('game/join/<int:game_id>/', JoinGameView.as_view(), name='join_game'),
 ]

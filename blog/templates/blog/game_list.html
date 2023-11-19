@@ -1,0 +1,12 @@
+{% extends 'blog/base.html' %}
+{% block content %}
+  <h1>Parties disponibles</h1>
+  <ul>
+    {% for game in games %}
+      <li>
+        {{ game.title }} - {{ game.game_author.username }}
+        (<a href="{% url 'join_game' game_id=game.id %}">Rejoindre</a>)
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
