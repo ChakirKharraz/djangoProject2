@@ -83,7 +83,7 @@ class GameCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('play', kwargs={'pk': self.object.id})
+        return reverse_lazy('play-game', kwargs={'pk': self.object.id})
 
 class GameDetailView(DetailView):
     model = Game
@@ -108,7 +108,7 @@ class JoinGameView(LoginRequiredMixin, View):
             return render(request, self.template_name, {'form': form, 'game_id': game_id})
         else:
             messages.error(request, 'Cette partie n\'existe pas ou est terminée.')
-            return redirect('game_list')
+            return redirect('game-list')
 
     def post(self, request, game_id):
         form = self.form_class(request.POST)
@@ -119,14 +119,16 @@ class JoinGameView(LoginRequiredMixin, View):
 
             if not game.room_code and not entered_password:
                 # Si la partie n'a pas de mot de passe, et aucun mot de passe n'est entré, rejoindre automatiquement
-                return redirect('play', pk=game.id)
-            elif game.check_password(entered_password):
-                return redirect('play', pk=game.id)
+                return redirect('play-game', pk=game.id)
+            elif entered_password == game.room_code:
+                return redirect('play-game', pk=game.id)
             else:
                 messages.error(request, 'Mot de passe incorrect.')
         else:
             messages.error(request, 'Formulaire invalide. Veuillez réessayer.')
 
         return render(request, self.template_name, {'form': form, 'game_id': game_id})
+
+
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})

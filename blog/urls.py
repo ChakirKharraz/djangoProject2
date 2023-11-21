@@ -11,8 +11,8 @@ urlpatterns = [
     path('post/<int:pk>/update', PostUpdateView.as_view(), name='post-update'),
     path('post/<int:pk>/delete', PostDeleteView.as_view(), name='post-delete'),
     path('about/', views.about, name='blog-about'),
-    path('create/', GameCreateView.as_view(), name='game_create'),
-    path('game/<int:pk>/', GameDetailView.as_view(), name='play'),
-    path('list/', GameListView.as_view(), name='game_list'),
-    path('game/join/<int:game_id>/', JoinGameView.as_view(), name='join_game'),
+    path('create/', GameCreateView.as_view(), name='game-create'),
+    path('game/<int:pk>/', GameDetailView.as_view(), name='play-game'),
+    path('list/', GameListView.as_view(), name='game-list'),
+    path('game/join/<int:game_id>/', JoinGameView.as_view(), name='join-game'),
 ]

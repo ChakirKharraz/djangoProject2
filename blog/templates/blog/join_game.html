@@ -1,10 +1,17 @@
-{% extends 'blog/base.html' %}
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
 {% block content %}
-    <h1>Rejoindre la partie</h1>
-    <form method="post" action="{% url 'join_game' game_id=game_id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="hidden" name="game_id" value="{{ game_id }}">
-        <button type="submit">Rejoindre</button>
-    </form>
+    <div class="container mt-4">
+        <h1>Rejoindre la partie</h1>
+        <form method="post" class="form">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form|crispy }}
+            </div>
+            <input type="hidden" name="game_id" value="{{ game_id }}">
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Rejoindre</button>
+            </div>
+        </form>
+    </div>
 {% endblock %}
