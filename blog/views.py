@@ -96,6 +96,10 @@ class GameListView(LoginRequiredMixin, ListView):
     context_object_name = 'games'
     ordering = ['-date_posted']
 
+    def get_queryset(self):
+        # Exclude finished games from the queryset
+        return Game.objects.filter(finished=False).order_by('-date_posted')
+
 class JoinGameView(LoginRequiredMixin, View):
     template_name = 'blog/join_game.html'
     form_class = JoinGameForm
@@ -104,8 +108,9 @@ class JoinGameView(LoginRequiredMixin, View):
     def get(self, request, game_id):
         game = get_object_or_404(Game, id=game_id)
         if game and not game.finished:
-            form = self.form_class()
-            return render(request, self.template_name, {'form': form, 'game_id': game_id})
+            # Only include the password field if the game has a password
+            form = self.form_class() if game.room_code else None
+            return render(request, self.template_name, {'form': form, 'game_id': game_id, 'game': game})
         else:
             messages.error(request, 'Cette partie n\'existe pas ou est terminée.')
             return redirect('game-list')
@@ -119,16 +124,28 @@ class JoinGameView(LoginRequiredMixin, View):
 
             if not game.room_code and not entered_password:
                 # Si la partie n'a pas de mot de passe, et aucun mot de passe n'est entré, rejoindre automatiquement
-                return redirect('play-game', pk=game.id)
+                return self.join_game(game)
             elif entered_password == game.room_code:
-                return redirect('play-game', pk=game.id)
+                return self.join_game(game)
             else:
                 messages.error(request, 'Mot de passe incorrect.')
         else:
             messages.error(request, 'Formulaire invalide. Veuillez réessayer.')
 
-        return render(request, self.template_name, {'form': form, 'game_id': game_id})
+        return render(request, self.template_name, {'form': form, 'game_id': game_id, 'game': game})
 
+    def join_game(self, game):
+        if not game.finished:
+            if not game.game_player2 and self.request.user != game.game_author:
+                game.game_player2 = self.request.user
+                game.save()
+                return redirect('play-game', pk=game.id)
+            elif game.game_player2 or self.request.user == game.game_author:
+                return redirect('play-game', pk=game.id)
+        else:
+            return redirect('play-game', pk=game.id)
 
+        messages.error(self.request, 'Vous ne pouvez pas rejoindre cette partie.')
+        return redirect('game-list')
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})

@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 {% block content %}
     <div class="container mt-4">
-        <h1>Rejoindre la partie</h1>
+        <h3>Join the game "{{ game.title }}" create by "{{ game.game_author }}"</h3>
         <form method="post" class="form">
             {% csrf_token %}
             <div class="form-group">
@@ -10,7 +10,7 @@
             </div>
             <input type="hidden" name="game_id" value="{{ game_id }}">
             <div class="form-group">
-                <button type="submit" class="btn btn-primary">Rejoindre</button>
+                <button type="submit" class="btn btn-primary">Join</button>
             </div>
         </form>
     </div>

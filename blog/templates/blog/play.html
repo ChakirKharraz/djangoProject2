@@ -4,11 +4,11 @@
     <link rel="stylesheet" type="text/css" href="{% static 'blog/game.css' %}">
 
     <div id="warningMessage" style="display: none; color: red;">
-        <p>AGRANDISSEZ LA FENETRE POUR VOIR LA GRILLE DE JEU</p>
+        <p>EXPAND THE WINDOW TO VIEW THE GAME GRID</p>
     </div>
-    <h1>TITRE : {{ object.title }}</h1>
+    <h1>NAME : {{ object.title }}</h1>
     <p>Grid Size: {{ object.grid_size }}</p>
-    <p>Alignment: {{ object.win_size }}</p>
+    <p>Align to win: {{ object.win_size }}</p>
     <p>room code: {{ object.room_code }}</p>
     <p>PLAYER 1: {{ object.game_author }}</p>
     <p>PLAYER 2: {{ object.game_player2 }}</p>

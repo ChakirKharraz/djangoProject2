@@ -25,6 +25,7 @@ class Game(models.Model):
     room_code = models.CharField(max_length=100, null=True, blank=True)
     grid_size = models.PositiveIntegerField(default=3)
     win_size = models.PositiveIntegerField(default=3)
+    private = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
