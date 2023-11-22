@@ -3,11 +3,16 @@
 {% block content %}
     <link rel="stylesheet" type="text/css" href="{% static 'blog/game.css' %}">
 
-
-    <h1>{{ object.title }}</h1>
+    <div id="warningMessage" style="display: none; color: red;">
+        <p>AGRANDISSEZ LA FENETRE POUR VOIR LA GRILLE DE JEU</p>
+    </div>
+    <h1>TITRE : {{ object.title }}</h1>
     <p>Grid Size: {{ object.grid_size }}</p>
     <p>Alignment: {{ object.win_size }}</p>
-    <p>room_code: {{ object.room_code }}</p>
+    <p>room code: {{ object.room_code }}</p>
+    <p>PLAYER 1: {{ object.game_author }}</p>
+    <p>PLAYER 2: {{ object.game_player2 }}</p>
+
 
 
     <table class="game_tbl">
@@ -26,17 +31,31 @@
 
     <script>
         function btnClk(row, col) {
-            // Récupérer l'élément bouton cliqué
             var button = document.getElementById("BlockBtn" + row + "_" + col);
-
-            // Récupérer la valeur de data-symbol
             var dataSymbol = button.getAttribute("data-symbol");
-
-            // Afficher la valeur à l'intérieur de la cellule
             button.innerHTML = dataSymbol;
-
             button.disabled = true;
         }
+
+        window.addEventListener("resize", checkWindowSize);
+
+        function checkWindowSize() {
+            var gameTable = document.querySelector(".game_tbl");
+            var warningMessage = document.getElementById("warningMessage");
+
+            var minWindowWidth = 600;
+            var minWindowHeight = 450;
+
+            if (window.innerWidth < minWindowWidth || window.innerHeight < minWindowHeight) {
+                gameTable.style.display = "none";
+                warningMessage.style.display = "block";
+            } else {
+                gameTable.style.display = "table";
+                warningMessage.style.display = "none";
+            }
+        }
+
+        window.addEventListener("load", checkWindowSize);
     </script>
 
 {% endblock %}
