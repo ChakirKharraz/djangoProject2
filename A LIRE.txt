@@ -1,0 +1,5 @@
+Pour recuperer le venv faire la commande suivante dans le terminal
+
+pip install -r requirements.txt
+
+
