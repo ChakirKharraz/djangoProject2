@@ -7,7 +7,7 @@
                 {% for game in games %}
                     <li class="list-group-item">
                         {{ game.title }} - {{ game.game_author.username }}
-
+                        <small class="text-muted">G{{ game.grid_size }}A{{ game.win_size }}</small>
                         {% if game.private %}
                             <small class="text-muted">Private</small>
                         {% else %}
