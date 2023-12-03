@@ -6,54 +6,197 @@
     <div id="warningMessage" style="display: none; color: red;">
         <p>EXPAND THE WINDOW TO VIEW THE GAME GRID</p>
     </div>
-    <h1>NAME : {{ object.title }}</h1>
-    <p>Grid Size: {{ object.grid_size }}</p>
-    <p>Align to win: {{ object.win_size }}</p>
-    <p>room code: {{ object.room_code }}</p>
-    <p>PLAYER 1: {{ object.game_author }}</p>
-    <p>PLAYER 2: {{ object.game_player2 }}</p>
 
-    <table class="game_tbl">
-        {% for row in "x"|ljust:object.grid_size %}
-            <tr>
-                {% for col in "x"|ljust:object.grid_size %}
-                    <td>
-                        <button class="BlockBtn" id="BlockBtn{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
-                                data-symbol="{{ user.profile.symbol }}"
-                                onclick="btnClk('{{ forloop.parentloop.counter }}', '{{ forloop.counter }}')"></button>
-                    </td>
-                {% endfor %}
-            </tr>
-        {% endfor %}
-    </table>
+    {% if object.game_finished %}
+        {% if object.winner %}
+            <h2>Partie gagnée par {{ object.winner.username }}</h2>
+        {% else %}
+            <h2>Match nul!</h2>
+        {% endif %}
+    {% else %}
+        <h1>NAME : {{ object.title }}</h1>
+        <p>Grid Size: {{ object.grid_size }}</p>
+        <p>Align to win: {{ object.win_size }}</p>
+        <p>room code: {{ object.room_code }}</p>
+        <p>PLAYER 1: {{ object.game_author }}</p>
+        <p>PLAYER 2: {{ object.game_player2 }}</p>
 
+        <table class="game_tbl">
+            {% for row in "x"|ljust:object.grid_size %}
+                <tr>
+                    {% for col in "x"|ljust:object.grid_size %}
+                        <td>
+                            <button class="BlockBtn" id="BlockBtn{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
+                                    data-symbol=" "
+                                    onclick="btnClk('{{ forloop.parentloop.counter }}', '{{ forloop.counter }}')"></button>
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script>
-        function btnClk(row, col) {
-            var button = document.getElementById("BlockBtn" + row + "_" + col);
-            var dataSymbol = button.getAttribute("data-symbol");
-            button.innerHTML = dataSymbol;
-            button.disabled = true;
+    var grid_size = {{ object.grid_size }};
+    var win_size = {{ object.win_size }};
+    var gameFinished = false;
+
+    function btnClk(row, col) {
+        // Vérifier si la partie est terminée
+        if (gameFinished) {
+            return;
         }
 
-        window.addEventListener("resize", checkWindowSize);
+        var button = $("#BlockBtn" + row + "_" + col);
+        var currentPlayerSymbol = getCurrentPlayerSymbol();
 
-        function checkWindowSize() {
-            var gameTable = document.querySelector(".game_tbl");
-            var warningMessage = document.getElementById("warningMessage");
+        console.log("Current Player Symbol: " + currentPlayerSymbol);
+
+        button.html(currentPlayerSymbol);
+        button.prop("disabled", true);
+
+        // Actualiser l'attribut data-symbol sur le bouton cliqué
+        button.attr("data-symbol", currentPlayerSymbol);
+
+        console.log("Button data-symbol: " + button.attr("data-symbol"));
+
+        checkWinner(row, col, currentPlayerSymbol);
+    }
+
+    function getCurrentPlayerSymbol() {
+        var currentPlayer = '{{ request.user }}';
+
+        console.log("Current Player: " + currentPlayer);
+
+        if (currentPlayer === '{{ object.game_author.username }}') {
+            return '{{ object.game_author.profile.symbol }}';
+        } else if (currentPlayer === '{{ object.game_player2.username }}') {
+            return '{{ object.game_player2.profile.symbol }}';
+        }
+
+        return ''; // Retourner une chaîne vide ou une valeur par défaut si le joueur n'est ni l'auteur ni le joueur 2
+    }
+
+    function checkWinner(row, col, symbol) {
+        // Récupérer la position (ligne et colonne) du bouton cliqué
+        var position = row + "_" + col;
+        var currentPlayerSymbol = getCurrentPlayerSymbol();
+        var horizontalCount = 0;
+        var verticalCount = 0;
+        var diagonalCount1 = 0;
+        var diagonalCount2 = 0;
+
+        // Vérifier horizontalement
+        for (var i = 1; i <= grid_size; i++) {
+            var button = $("#BlockBtn" + row + "_" + i);
+            if (button.attr("data-symbol") === symbol) {
+                horizontalCount++;
+            } else {
+                horizontalCount = 0;
+            }
+
+            if (horizontalCount === win_size) {
+                alert(getWinnerMessage(currentPlayerSymbol));
+                gameFinished = true;
+                return;
+            }
+        }
+
+        // Vérifier verticalement
+        for (var j = 1; j <= grid_size; j++) {
+            var button = $("#BlockBtn" + j + "_" + col);
+            if (button.attr("data-symbol") === currentPlayerSymbol) {
+                verticalCount++;
+            } else {
+                verticalCount = 0;
+            }
+
+            if (verticalCount === win_size) {
+                alert(getWinnerMessage(currentPlayerSymbol));
+                gameFinished = true;
+                return;
+            }
+        }
+
+        // Vérifier diagonalement (de gauche à droite)
+        for (var k = -win_size + 1; k < win_size; k++) {
+            var button = $("#BlockBtn" + (row + k) + "_" + (col + k));
+            if (button && button.attr("data-symbol") === currentPlayerSymbol) {
+                diagonalCount1++;
+            } else {
+                diagonalCount1 = 0;
+            }
+
+            if (diagonalCount1 === win_size) {
+                alert(getWinnerMessage(currentPlayerSymbol));
+                gameFinished = true;
+                return;
+            }
+        }
+
+        // Vérifier diagonalement (de droite à gauche)
+        for (var l = -win_size + 1; l < win_size; l++) {
+            var button = $("#BlockBtn" + (row - l) + "_" + (col + l));
+            if (button && button.attr("data-symbol") === currentPlayerSymbol) {
+                diagonalCount2++;
+            } else {
+                diagonalCount2 = 0;
+            }
+
+            if (diagonalCount2 === win_size) {
+                alert(getWinnerMessage(currentPlayerSymbol));
+                gameFinished = true;
+                return;
+            }
+        }
+
+        // Si aucune condition de victoire n'est satisfaite, vérifiez s'il y a une égalité
+        if (isBoardFull()) {
+            alert("La partie est terminée. Match nul!");
+            gameFinished = true;
+        }
+    }
+
+    function getWinnerMessage(symbol) {
+        // Récupérer le pseudo du joueur associé au symbole
+        var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
+        return winnerUsername + " a gagné!";
+    }
+
+    function isBoardFull() {
+        // Vérifier si toutes les cases sont remplies
+        for (var i = 1; i <= grid_size; i++) {
+            for (var j = 1; j <= grid_size; j++) {
+                var button = $("#BlockBtn" + i + "_" + j);
+                if (button.html() === "") {
+                    return false; // Il y a une case vide, la partie continue
+                }
+            }
+        }
+        return true; // Toutes les cases sont remplies, c'est un match nul
+    }
+
+    function checkWindowSize() {
+            var gameTable = $(".game_tbl");
+            var warningMessage = $("#warningMessage");
 
             var minWindowWidth = 600;
             var minWindowHeight = 450;
 
             if (window.innerWidth < minWindowWidth || window.innerHeight < minWindowHeight) {
-                gameTable.style.display = "none";
-                warningMessage.style.display = "block";
+                gameTable.css("display", "none");
+                warningMessage.css("display", "block");
             } else {
-                gameTable.style.display = "table";
-                warningMessage.style.display = "none";
+                gameTable.css("display", "table");
+                warningMessage.css("display", "none");
             }
-        }
+    }
 
-        window.addEventListener("load", checkWindowSize);
-    </script>
+    $(document).ready(function () {
+        checkWindowSize();
+        $(window).resize(checkWindowSize);
+    });
+</script>
 
 {% endblock %}

@@ -26,6 +26,7 @@ class Game(models.Model):
     grid_size = models.PositiveIntegerField(default=3)
     win_size = models.PositiveIntegerField(default=3)
     private = models.BooleanField(default=False)
+    winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='games_won')
 
     def __str__(self):
         return self.title
@@ -44,4 +45,9 @@ class Game(models.Model):
         if not self.game_player2 and self.game_author != self.game_player2:
             self.game_player2 = self.game_player2
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
+
+        def set_winner(self, winner):
+            self.winner = winner
+            self.finished = True
+            self.save()
