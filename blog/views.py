@@ -79,13 +79,29 @@ class GameCreateView(LoginRequiredMixin, CreateView):
     template_name = 'blog/create_game.html'
 
     def form_valid(self, form):
+        # Set the game author to the current user
         form.instance.game_author = self.request.user
+
+        # Check if grid_size is between 3 and 12
+        grid_size = form.cleaned_data['grid_size']
+        if grid_size < 3 or grid_size > 12:
+            messages.error(self.request, 'Please choose a grid size between 3 and 12.')
+            return self.form_invalid(form)
+
+        # Check if win_size is between 3 and grid_size
+        win_size = form.cleaned_data['win_size']
+        if win_size < 3 or win_size > grid_size:
+            messages.error(self.request, 'Please choose a win size between 3 and the selected grid size.')
+            return self.form_invalid(form)
+
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('play-game', kwargs={'pk': self.object.id})
 
+
 class GameDetailView(DetailView):
+
     model = Game
     template_name = 'blog/play.html'
 
