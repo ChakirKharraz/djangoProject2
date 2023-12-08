@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, DetailView, CreateView,UpdateView,DeleteView, View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from .models import Post
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Game
-from .forms import GameForm,JoinGameForm
+from .forms import GameForm, JoinGameForm
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.http import JsonResponse
+from users.models import Profile
+
 
 def home(request):
     context = {
@@ -22,6 +25,7 @@ class PostListView(ListView):
     ordering = ['-date_posted']
     paginate_by = 4
 
+
 class UserPostListView(ListView):
     model = Post
     template_name = 'blog/user_posts.html'
@@ -32,22 +36,23 @@ class UserPostListView(ListView):
         user = get_object_or_404(User, username=self.kwargs.get('username'))
         return Post.objects.filter(author=user).order_by('-date_posted')
 
+
 class PostDetailView(DetailView):
     model = Post
 
-class PostCreateView(LoginRequiredMixin,CreateView):
+
+class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
-    fields = ['title','content']
+    fields = ['title', 'content']
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
 
-
-class PostUpdateView(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
-    fields = ['title','content']
+    fields = ['title', 'content']
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -60,7 +65,8 @@ class PostUpdateView(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
         else:
             return False
 
-class PostDeleteView(LoginRequiredMixin,UserPassesTestMixin,DeleteView):
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
     success_url = '/'
 
@@ -70,7 +76,6 @@ class PostDeleteView(LoginRequiredMixin,UserPassesTestMixin,DeleteView):
             return True
         else:
             return False
-
 
 
 class GameCreateView(LoginRequiredMixin, CreateView):
@@ -101,7 +106,6 @@ class GameCreateView(LoginRequiredMixin, CreateView):
 
 
 class GameDetailView(DetailView):
-
     model = Game
     template_name = 'blog/play.html'
 
@@ -115,6 +119,7 @@ class GameListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         # Exclude finished games from the queryset
         return Game.objects.filter(finished=False).order_by('-date_posted')
+
 
 class JoinGameView(LoginRequiredMixin, View):
     template_name = 'blog/join_game.html'
@@ -163,5 +168,56 @@ class JoinGameView(LoginRequiredMixin, View):
 
         messages.error(self.request, 'Vous ne pouvez pas rejoindre cette partie.')
         return redirect('game-list')
+
+
+def update_game_status(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+
+        # Set the finished attribute to True
+        game.finished = True
+
+        # Determine the winner and update the winner attribute
+        current_player = request.user
+        if current_player == game.game_author:
+            game.winner = game.game_author
+        elif current_player == game.game_player2:
+            game.winner = game.game_player2
+
+        game.save()
+
+        # Update player profiles
+        author_profile = game.game_author.profile  # Access profile through user.profile
+        player2_profile = game.game_player2.profile  # Access profile through user.profile
+
+        if game.winner:
+            # Increment game_played for both players
+            author_profile.game_played += 1
+            player2_profile.game_played += 1
+
+            # Update scores based on the game outcome
+            if game.winner == game.game_author:
+                author_profile.score += 1
+                player2_profile.score -= 1
+            elif game.winner == game.game_player2:
+                author_profile.score -= 1
+                player2_profile.score += 1
+        else:
+            # In case of a draw, increment game_played for both players
+            author_profile.game_played += 1
+            player2_profile.game_played += 1
+
+        author_profile.save()
+        player2_profile.save()
+
+        return JsonResponse({'message': 'Game finished successfully'})
+    except Game.DoesNotExist:
+        return JsonResponse({'error': 'Game not found'}, status=404)
+    except Profile.DoesNotExist:
+        return JsonResponse({'error': 'Profile not found for one or both players'}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})

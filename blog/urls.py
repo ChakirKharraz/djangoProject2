@@ -2,6 +2,7 @@ from django.urls import path
 from .views import PostListView, PostDetailView, PostCreateView,PostUpdateView,PostDeleteView,UserPostListView
 from . import views
 from .views import GameCreateView, GameDetailView, GameListView, JoinGameView
+from .views import update_game_status
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -15,4 +16,5 @@ urlpatterns = [
     path('game/<int:pk>/', GameDetailView.as_view(), name='play-game'),
     path('list/', GameListView.as_view(), name='game-list'),
     path('game/join/<int:game_id>/', JoinGameView.as_view(), name='join-game'),
+    path('update_game_status/<int:game_id>/', update_game_status, name='update_game_status'),
 ]

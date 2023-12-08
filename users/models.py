@@ -7,6 +7,7 @@ class Profile(models.Model):
     image = models.ImageField(default='default.png', upload_to='profile_pics')
     symbol = models.CharField(max_length=1, default='X')
     score = models.IntegerField(default=0)
+    game_played =  models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.user.username} Profile'
