@@ -48,3 +48,11 @@ class Game(models.Model):
 
         super().save(*args, **kwargs)
 
+class GameCell(models.Model):
+    game = models.ForeignKey('Game', on_delete=models.CASCADE)
+    row = models.PositiveIntegerField()
+    col = models.PositiveIntegerField()
+    symbol = models.CharField(max_length=1, default=' ')
+
+    def __str__(self):
+        return f"{self.game.title} - Cell ({self.row}, {self.col})"

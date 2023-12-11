@@ -21,213 +21,280 @@
         <p>PLAYER 1: {{ object.game_author }}</p>
         <p>PLAYER 2: {{ object.game_player2 }}</p>
 
-        <table class="game_tbl">
-            {% for row in "x"|ljust:object.grid_size %}
-                <tr>
-                    {% for col in "x"|ljust:object.grid_size %}
-                        <td>
-                            <button class="BlockBtn" id="BlockBtn{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
-                                    data-symbol=" "
-                                    onclick="btnClk('{{ forloop.parentloop.counter }}', '{{ forloop.counter }}')"></button>
-                        </td>
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
+        <div id="gameContainer" style="display: none;">
+            <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+            <script>
 
+                var grid_size = {{ object.grid_size }};
+                var win_size = {{ object.win_size }};
+                var gameFinished = false;
+                var pollInterval = 3000;  // Polling interval in milliseconds (adjust as needed)
 
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+                function btnClk(row, col) {
+                    if (gameFinished) {
+                        return;
+                    }
 
-    <script>
-        var grid_size = {{ object.grid_size }};
-        var win_size = {{ object.win_size }};
-        var gameFinished = false;
+                    var button = $("#BlockBtn" + row + "_" + col);
+                    var currentPlayerSymbol = getCurrentPlayerSymbol();
 
+                    button.html(currentPlayerSymbol);
+                    button.prop("disabled", true);
+                    button.attr("data-symbol", currentPlayerSymbol);
 
-        function btnClk(row, col) {
-            // Vérifier si la partie est terminée
-            if (gameFinished) {
-                return;
-            }
-            var button = $("#BlockBtn" + row + "_" + col);
-            var currentPlayerSymbol = getCurrentPlayerSymbol();
-
-            console.log("Current Player Symbol: " + currentPlayerSymbol);
-
-            button.html(currentPlayerSymbol);
-            button.prop("disabled", true);
-
-            // Actualiser l'attribut data-symbol sur le bouton cliqué
-            button.attr("data-symbol", currentPlayerSymbol);
-
-            console.log("Button data-symbol: " + button.attr("data-symbol"));
-
-            checkWinner(row, col, currentPlayerSymbol);
-        }
-
-        function getCurrentPlayerSymbol() {
-            var currentPlayer = '{{ request.user }}';
-
-            console.log("Current Player: " + currentPlayer);
-
-            if (currentPlayer === '{{ object.game_author.username }}') {
-                return '{{ object.game_author.profile.symbol }}';
-            } else if (currentPlayer === '{{ object.game_player2.username }}') {
-                return '{{ object.game_player2.profile.symbol }}';
-            }
-
-            return ''; // Retourner une chaîne vide ou une valeur par défaut si le joueur n'est ni l'auteur ni le joueur 2
-        }
-
-        function checkWinner(row, col, symbol) {
-            // Récupérer la position (ligne et colonne) du bouton cliqué
-            var position = row + "_" + col;
-            var currentPlayerSymbol = getCurrentPlayerSymbol();
-            var horizontalCount = 0;
-            var verticalCount = 0;
-            var diagonalCount1 = 0;
-            var diagonalCount2 = 0;
-
-            // Vérifier horizontalement
-            for (var i = 1; i <= grid_size; i++) {
-                var button = $("#BlockBtn" + row + "_" + i);
-                if (button.attr("data-symbol") === symbol) {
-                    horizontalCount++;
-                } else {
-                    horizontalCount = 0;
-                }
-
-                if (horizontalCount === win_size) {
-                    alert(getWinnerMessage(currentPlayerSymbol));
-                    $(document).ready(function () {
-                        finishGame();
+                    updateModel(row, col, currentPlayerSymbol, function () {
+                        updateGrid(row, col, currentPlayerSymbol);
+                        checkWinner(row, col, currentPlayerSymbol);
                     });
-                    return;
-                }
-            }
-
-            // Vérifier verticalement
-            for (var j = 1; j <= grid_size; j++) {
-                var button = $("#BlockBtn" + j + "_" + col);
-                if (button.attr("data-symbol") === currentPlayerSymbol) {
-                    verticalCount++;
-                } else {
-                    verticalCount = 0;
                 }
 
-                if (verticalCount === win_size) {
-                    alert(getWinnerMessage(currentPlayerSymbol));
-                    $(document).ready(function () {
-                        finishGame();
+                function updateGrid(row, col, symbol) {
+                    var button = $("#BlockBtn" + row + "_" + col);
+                    button.html(symbol);
+
+                    // Fetch the symbol from the server
+                    $.ajax({
+                        url: '/get_game_cell/',
+                        type: 'GET',
+                        data: {
+                            'game_id': {{ object.id }},
+                            'row': row,
+                            'col': col,
+                        },
+                        success: function (data) {
+                            if (data && data.symbol) {
+                                button.attr("data-symbol", data.symbol);  // Update the data-symbol attribute
+                            }
+                        },
+                        error: function (error) {
+                            console.error('Error fetching game cell:', error);
+                        }
                     });
-                    return;
-                }
-            }
-
-            // Vérifier diagonalement (de gauche à droite)
-            for (var k = -win_size + 1; k < win_size; k++) {
-                var button = $("#BlockBtn" + (parseInt(row) + k) + "_" + (parseInt(col) + k));
-                if (button.length && button.attr("data-symbol") === symbol) {
-                    diagonalCount1++;
-                } else {
-                    diagonalCount1 = 0;
                 }
 
-                if (diagonalCount1 === win_size) {
-                    alert(getWinnerMessage(symbol));
-                    $(document).ready(function () {
-                        finishGame();
+                function updateModel(row, col, symbol, callback) {
+                    $.ajax({
+                        url: '/update_game_cell/',  // Updated URL
+                        type: 'POST',
+                        data: {
+                            'game_id': {{ object.id }},
+                            'row': row,
+                            'col': col,
+                            'symbol': symbol,
+                        },
+
+                        success: function (data) {
+                            console.log('Model updated successfully:', data);
+                            // Call the callback function after successful update
+                            callback();
+                        },
+                        error: function (error) {
+                            console.error('Error updating model:', error);
+                        }
                     });
-                    return;
-                }
-            }
-
-            // Vérifier diagonalement (de droite à gauche)
-            for (var l = -win_size + 1; l < win_size; l++) {
-                var button = $("#BlockBtn" + (parseInt(row) - l) + "_" + (parseInt(col) + l));
-                if (button.length && button.attr("data-symbol") === symbol) {
-                    diagonalCount2++;
-                } else {
-                    diagonalCount2 = 0;
                 }
 
-                if (diagonalCount2 === win_size) {
-                    alert(getWinnerMessage(symbol));
-                    $(document).ready(function () {
-                        finishGame();
-                    });
-                    return;
+                function getCurrentPlayerSymbol() {
+                    var currentPlayer = '{{ request.user }}';
+
+                    console.log("Current Player: " + currentPlayer);
+
+                    if (currentPlayer === '{{ object.game_author.username }}') {
+                        return '{{ object.game_author.profile.symbol }}';
+                    } else if (currentPlayer === '{{ object.game_player2.username }}') {
+                        return '{{ object.game_player2.profile.symbol }}';
+                    }
+
+                    return ''; // Return an empty string or a default value if the player is neither the author nor player 2
                 }
-            }
 
+                function checkWinner(row, col, symbol) {
+                    // Récupérer la position (ligne et colonne) du bouton cliqué
+                    var position = row + "_" + col;
+                    var currentPlayerSymbol = getCurrentPlayerSymbol();
+                    var horizontalCount = 0;
+                    var verticalCount = 0;
+                    var diagonalCount1 = 0;
+                    var diagonalCount2 = 0;
 
-            // Si aucune condition de victoire n'est satisfaite, vérifiez s'il y a une égalité
-            if (isBoardFull()) {
-                alert("La partie est terminée. Match nul!");
-                $(document).ready(function () {
-                    finishGame();
-                });
-            }
-        }
+                    // Vérifier horizontalement
+                    for (var i = 1; i <= grid_size; i++) {
+                        var button = $("#BlockBtn" + row + "_" + i);
+                        if (button.attr("data-symbol") === symbol) {
+                            horizontalCount++;
+                        } else {
+                            horizontalCount = 0;
+                        }
 
-        function getWinnerMessage(symbol) {
-            // Récupérer le pseudo du joueur associé au symbole
-            var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
-            return winnerUsername + " a gagné!";
-        }
+                        if (horizontalCount === win_size) {
+                            alert(getWinnerMessage(currentPlayerSymbol));
+                            $(document).ready(function () {
+                                finishGame();
+                            });
+                            return;
+                        }
+                    }
 
-        function isBoardFull() {
-            // Vérifier si toutes les cases sont remplies
-            for (var i = 1; i <= grid_size; i++) {
-                for (var j = 1; j <= grid_size; j++) {
-                    var button = $("#BlockBtn" + i + "_" + j);
-                    if (button.attr("data-symbol") === " ") {
-                        return false; // Il y a une case vide, la partie continue
+                    // Vérifier verticalement
+                    for (var j = 1; j <= grid_size; j++) {
+                        var button = $("#BlockBtn" + j + "_" + col);
+                        if (button.attr("data-symbol") === currentPlayerSymbol) {
+                            verticalCount++;
+                        } else {
+                            verticalCount = 0;
+                        }
+
+                        if (verticalCount === win_size) {
+                            alert(getWinnerMessage(currentPlayerSymbol));
+                            $(document).ready(function () {
+                                finishGame();
+                            });
+                            return;
+                        }
+                    }
+
+                    // Vérifier diagonalement (de gauche à droite)
+                    for (var k = -win_size + 1; k < win_size; k++) {
+                        var button = $("#BlockBtn" + (parseInt(row) + k) + "_" + (parseInt(col) + k));
+                        if (button.length && button.attr("data-symbol") === symbol) {
+                            diagonalCount1++;
+                        } else {
+                            diagonalCount1 = 0;
+                        }
+
+                        if (diagonalCount1 === win_size) {
+                            alert(getWinnerMessage(symbol));
+                            $(document).ready(function () {
+                                finishGame();
+                            });
+                            return;
+                        }
+                    }
+
+                    // Vérifier diagonalement (de droite à gauche)
+                    for (var l = -win_size + 1; l < win_size; l++) {
+                        var button = $("#BlockBtn" + (parseInt(row) - l) + "_" + (parseInt(col) + l));
+                        if (button.length && button.attr("data-symbol") === symbol) {
+                            diagonalCount2++;
+                        } else {
+                            diagonalCount2 = 0;
+                        }
+
+                        if (diagonalCount2 === win_size) {
+                            alert(getWinnerMessage(symbol));
+                            $(document).ready(function () {
+                                finishGame();
+                            });
+                            return;
+                        }
+                    }
+
+                    // Si aucune condition de victoire n'est satisfaite, vérifiez s'il y a une égalité
+                    if (isBoardFull()) {
+                        alert("La partie est terminée. Match nul!");
+                        $(document).ready(function () {
+                            finishGame();
+                        });
                     }
                 }
-            }
-            return true; // Toutes les cases sont remplies, c'est un match nul
-        }
 
-
-        function checkWindowSize() {
-            var gameTable = $(".game_tbl");
-            var warningMessage = $("#warningMessage");
-
-            var minWindowWidth = 600;
-            var minWindowHeight = 450;
-
-            if (window.innerWidth < minWindowWidth || window.innerHeight < minWindowHeight) {
-                gameTable.css("display", "none");
-                warningMessage.css("display", "block");
-            } else {
-                gameTable.css("display", "table");
-                warningMessage.css("display", "none");
-            }
-        }
-
-        function finishGame() {
-            gameFinished = true;
-            $.ajax({
-                url: '/update_game_status/{{ object.id }}/',
-                type: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    console.log('Success:', data);
-                    // Add any additional actions you want to perform after the game is finished
-                },
-                error: function (error) {
-                    console.error('Error:', error);
+                function getWinnerMessage(symbol) {
+                    // Récupérer le pseudo du joueur associé au symbole
+                    var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
+                    return winnerUsername + " a gagné!";
                 }
-            });
-        }
+
+                function isBoardFull() {
+                    // Vérifier si toutes les cases sont remplies
+                    for (var i = 1; i <= grid_size; i++) {
+                        for (var j = 1; j <= grid_size; j++) {
+                            var button = $("#BlockBtn" + i + "_" + j);
+                            if (button.attr("data-symbol") === " ") {
+                                return false; // Il y a une case vide, la partie continue
+                            }
+                        }
+                    }
+                    return true; // Toutes les cases sont remplies, c'est un match nul
+                }
+
+                function checkWindowSize() {
+                    var gameTable = $(".game_tbl");
+                    var warningMessage = $("#warningMessage");
+
+                    var minWindowWidth = 600;
+                    var minWindowHeight = 450;
+
+                    if (window.innerWidth < minWindowWidth || window.innerHeight < minWindowHeight) {
+                        gameTable.css("display", "none");
+                        warningMessage.css("display", "block");
+                    } else {
+                        gameTable.css("display", "table");
+                        warningMessage.css("display", "none");
+                    }
+                }
+
+                function finishGame() {
+                    gameFinished = true;
+                    $.ajax({
+                        url: '/update_game_status/{{ object.id }}/',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            console.log('Success:', data);
+                        },
+                        error: function (error) {
+                            console.error('Error:', error);
+                        }
+                    });
+                }
+
+                function pollForUpdates() {
+                    setInterval(function () {
+                        $.ajax({
+                            url: `/get_game_grid/{{ object.id }}/`,  // Updated URL
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function (data) {
+                                // Process the updates received from the server
+                                console.log('Received updates:', data);
+                                updateGrid(data);
+                            },
+                            error: function (error) {
+                                console.error('Error checking for updates:', error);
+                            }
+                        });
+                    }, pollInterval);
+                }
 
 
-        $(document).ready(function () {
-            checkWindowSize();
-            $(window).resize(checkWindowSize);
-        });
-    </script>
+                function generateGameGrid() {
+                    var gameContainer = $("#gameContainer");
+                    var table = $("<table>").addClass("game_tbl");
 
+                    for (var i = 1; i <= grid_size; i++) {
+                        var row = $("<tr>");
+                        for (var j = 1; j <= grid_size; j++) {
+                            var col = $("<td>").append(
+                                $("<button>").addClass("BlockBtn").attr({
+                                    id: "BlockBtn" + i + "_" + j,
+                                    "data-row": i,
+                                    "data-col": j,
+                                    "data-symbol": " ",
+                                    onclick: "btnClk(" + i + ", " + j + ")"
+                                })
+                            );
+                            row.append(col);
+                        }
+                        table.append(row);
+                    }
+
+                    gameContainer.append(table);
+                    gameContainer.css("display", "block");
+                }
+
+                generateGameGrid();
+                pollForUpdates();
+            </script>
+        </div>
+    {% endif %}
 {% endblock %}

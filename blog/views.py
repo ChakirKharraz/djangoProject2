@@ -3,11 +3,12 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from .models import Post
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from .models import Game
+from .models import Game, GameCell
 from .forms import GameForm, JoinGameForm
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from users.models import Profile
 
 
@@ -218,6 +219,95 @@ def update_game_status(request, game_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
+@csrf_exempt
+def update_game_cell(request):
+    if request.method == 'POST':
+        game_id = request.POST.get('game_id')
+        row = request.POST.get('row')
+        col = request.POST.get('col')
+        symbol = request.POST.get('symbol')
+
+        game = Game.objects.get(pk=game_id)
+        cell, created = GameCell.objects.get_or_create(game=game, row=row, col=col)
+        cell.symbol = symbol
+        cell.save()
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def check_for_updates(request, game_id):
+    # Your logic to check for updates and prepare a response
+    updates = {'update_type': 'move', 'data': 'some_data'}
+
+    return JsonResponse(updates)
+
+def get_game_cell(request):
+    if request.method == 'GET':
+        game_id = request.GET.get('game_id')
+        row = request.GET.get('row')
+        col = request.GET.get('col')
+
+        try:
+            game_cell = GameCell.objects.get(game__id=game_id, row=row, col=col)
+            return JsonResponse({'symbol': game_cell.symbol})
+        except GameCell.DoesNotExist:
+            return JsonResponse({'symbol': ''})  # Return an empty symbol if the cell doesn't exist
+    else:
+        return JsonResponse({'symbol': ''})
+
+def get_game_grid(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+        cells = GameCell.objects.filter(game=game)
+        grid = {'cells': []}
+
+        for cell in cells:
+            grid['cells'].append({
+                'row': cell.row,
+                'col': cell.col,
+                'symbol': cell.symbol,
+            })
+
+        return JsonResponse(grid)
+    except Game.DoesNotExist:
+        return JsonResponse({'error': 'Game not found'}, status=404)
+
+@csrf_exempt
+def update_game_cell(request):
+    if request.method == 'POST':
+        game_id = request.POST.get('game_id')
+        row = request.POST.get('row')
+        col = request.POST.get('col')
+        symbol = request.POST.get('symbol')
+
+        game = Game.objects.get(pk=game_id)
+        cell, created = GameCell.objects.get_or_create(game=game, row=row, col=col)
+        cell.symbol = symbol
+        cell.save()
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+def get_game_grid(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+        cells = GameCell.objects.filter(game=game)
+        grid = {'cells': []}
+
+        for cell in cells:
+            grid['cells'].append({
+                'row': cell.row,
+                'col': cell.col,
+                'symbol': cell.symbol,
+            })
+
+        return JsonResponse(grid)
+    except Game.DoesNotExist:
+        return JsonResponse({'error': 'Game not found'}, status=404)
 
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})
