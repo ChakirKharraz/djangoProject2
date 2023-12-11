@@ -48,3 +48,9 @@ class Game(models.Model):
 
         super().save(*args, **kwargs)
 
+
+class GridCell(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    row = models.IntegerField()
+    col = models.IntegerField()
+    symbol = models.CharField(max_length=2)

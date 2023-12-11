@@ -14,12 +14,12 @@
             <h2>Match nul!</h2>
         {% endif %}
     {% else %}
-        <h1>NAME : {{ object.title }}</h1>
-        <p>Grid Size: {{ object.grid_size }}</p>
+        <h1 style="font-size: 20px">Name : {{ object.title }}</h1>
+        <p>Grid size: {{ object.grid_size }}</p>
         <p>Align to win: {{ object.win_size }}</p>
-        <p>room code: {{ object.room_code }}</p>
-        <p>PLAYER 1: {{ object.game_author }}</p>
-        <p>PLAYER 2: {{ object.game_player2 }}</p>
+        <p>Room code: {{ object.room_code }}</p>
+        <p>Player 1: {{ object.game_author }}</p>
+        <p id="player2">Player 2: None</p>
 
         <table class="game_tbl">
             {% for row in "x"|ljust:object.grid_size %}
@@ -43,27 +43,32 @@
         var grid_size = {{ object.grid_size }};
         var win_size = {{ object.win_size }};
         var gameFinished = false;
-
+        var gameId = '{{ object.id }}';
 
         function btnClk(row, col) {
             // Vérifier si la partie est terminée
             if (gameFinished) {
                 return;
             }
-            var button = $("#BlockBtn" + row + "_" + col);
-            var currentPlayerSymbol = getCurrentPlayerSymbol();
+            var symbol = getCurrentPlayerSymbol();
+            $.ajax({
+                url: '/store_cell/',
+                type: 'POST',
+                data: {
+                    'game_id': '{{ object.id }}',
+                    'row': row,
+                    'col': col,
+                    'symbol': symbol,
+                },
+                success: function (data) {
+                    console.log('Cell stored successfully:', data);
+                },
+                error: function (error) {
+                    console.error('Error storing cell:', error);
+                }
+            });
 
-            console.log("Current Player Symbol: " + currentPlayerSymbol);
-
-            button.html(currentPlayerSymbol);
-            button.prop("disabled", true);
-
-            // Actualiser l'attribut data-symbol sur le bouton cliqué
-            button.attr("data-symbol", currentPlayerSymbol);
-
-            console.log("Button data-symbol: " + button.attr("data-symbol"));
-
-            checkWinner(row, col, currentPlayerSymbol);
+            checkWinner(row, col, symbol);
         }
 
         function getCurrentPlayerSymbol() {
@@ -77,11 +82,10 @@
                 return '{{ object.game_player2.profile.symbol }}';
             }
 
-            return ''; // Retourner une chaîne vide ou une valeur par défaut si le joueur n'est ni l'auteur ni le joueur 2
+            return '';
         }
 
         function checkWinner(row, col, symbol) {
-            // Récupérer la position (ligne et colonne) du bouton cliqué
             var position = row + "_" + col;
             var currentPlayerSymbol = getCurrentPlayerSymbol();
             var horizontalCount = 0;
@@ -223,10 +227,64 @@
             });
         }
 
+        function updateGrid() {
+
+            $.ajax({
+                url: '/get_grid_cells/' + gameId + '/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    // Update the grid based on the retrieved data
+                    updateGridDisplay(data.grid_cells);
+                },
+                error: function (error) {
+                    console.error('Error fetching grid cells:', error);
+                }
+            });
+        }
+
+        function updateGridDisplay(gridCells) {
+            // Clear the existing symbols on the grid
+            $('.BlockBtn').html('');
+
+            // Update the grid with the retrieved symbols
+            gridCells.forEach(function (cell) {
+                var row = cell.row;
+                var col = cell.col;
+                var symbol = cell.symbol;
+
+                var button = $("#BlockBtn" + row + "_" + col);
+                button.html(symbol);
+                button.prop("disabled", true);
+                button.attr("data-symbol", symbol);
+            });
+        }
+
+        function updateDatasPlayer2() {
+            if ($("#player2").text() === "Player 2: None") {
+                $.ajax({
+                    url: '/updateDatasPlayer2/' + gameId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log(data.player2);
+                        $("#player2").text("Player 2: " + data.player2);
+                    },
+                    error: function (error) {
+                        console.error('Error fetching player2:', error);
+                    }
+                });
+            }
+        }
+
+        // Fetch and update the grid every second
+        setInterval(updateGrid, 1000);
+        setInterval(updateDatasPlayer2, 1000);
 
         $(document).ready(function () {
             checkWindowSize();
             $(window).resize(checkWindowSize);
+
         });
     </script>
 

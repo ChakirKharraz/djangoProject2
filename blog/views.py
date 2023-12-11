@@ -3,12 +3,13 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from .models import Post
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from .models import Game
+from .models import Game, GridCell
 from .forms import GameForm, JoinGameForm
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Profile
+from django.views.decorators.csrf import csrf_exempt
 
 
 def home(request):
@@ -218,6 +219,37 @@ def update_game_status(request, game_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@csrf_exempt
+def store_cell(request):
+    if request.method == 'POST':
+        game_id = request.POST.get('game_id')
+        row = request.POST.get('row')
+        col = request.POST.get('col')
+        symbol = request.POST.get('symbol')
+
+        # Replace 'Game' with the actual name of your game model
+        game = Game.objects.get(id=game_id)
+
+        # Store the cell information in the database
+        grid_cell = GridCell.objects.create(game=game, row=row, col=col, symbol=symbol)
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def get_grid_cells(request, game_id):
+    grid_cells = GridCell.objects.filter(game_id=game_id).values('row', 'col', 'symbol')
+    return JsonResponse({'success': True,'grid_cells': list(grid_cells)})
+
+def updateDatasP2(request, game_id):
+    game = get_object_or_404(Game, id=game_id)
+
+    if game.game_player2==None:
+        player2 = "None"
+    else:
+        player2 = game.game_player2.username
+
+    return JsonResponse({'success': True, 'player2': player2})
 
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})
