@@ -92,10 +92,18 @@
             var verticalCount = 0;
             var diagonalCount1 = 0;
             var diagonalCount2 = 0;
+            var button;
+
+            // Fonction pour afficher l'alerte et terminer la partie
+            function showWinnerAlert(winningSymbol) {
+                $(document).ready(function () {
+                    finishGame(winningSymbol);
+                });
+            }
 
             // Vérifier horizontalement
             for (var i = 1; i <= grid_size; i++) {
-                var button = $("#BlockBtn" + row + "_" + i);
+                button = $("#BlockBtn" + row + "_" + i);
                 if (button.attr("data-symbol") === symbol) {
                     horizontalCount++;
                 } else {
@@ -103,35 +111,29 @@
                 }
 
                 if (horizontalCount === win_size) {
-                    alert(getWinnerMessage(currentPlayerSymbol));
-                    $(document).ready(function () {
-                        finishGame();
-                    });
+                    showWinnerAlert(symbol);
                     return;
                 }
             }
 
             // Vérifier verticalement
             for (var j = 1; j <= grid_size; j++) {
-                var button = $("#BlockBtn" + j + "_" + col);
-                if (button.attr("data-symbol") === currentPlayerSymbol) {
+                button = $("#BlockBtn" + j + "_" + col);
+                if (button.attr("data-symbol") === symbol) {
                     verticalCount++;
                 } else {
                     verticalCount = 0;
                 }
 
                 if (verticalCount === win_size) {
-                    alert(getWinnerMessage(currentPlayerSymbol));
-                    $(document).ready(function () {
-                        finishGame();
-                    });
+                    showWinnerAlert(symbol);
                     return;
                 }
             }
 
             // Vérifier diagonalement (de gauche à droite)
             for (var k = -win_size + 1; k < win_size; k++) {
-                var button = $("#BlockBtn" + (parseInt(row) + k) + "_" + (parseInt(col) + k));
+                button = $("#BlockBtn" + (parseInt(row) + k) + "_" + (parseInt(col) + k));
                 if (button.length && button.attr("data-symbol") === symbol) {
                     diagonalCount1++;
                 } else {
@@ -139,17 +141,14 @@
                 }
 
                 if (diagonalCount1 === win_size) {
-                    alert(getWinnerMessage(symbol));
-                    $(document).ready(function () {
-                        finishGame();
-                    });
+                    showWinnerAlert(symbol);
                     return;
                 }
             }
 
             // Vérifier diagonalement (de droite à gauche)
             for (var l = -win_size + 1; l < win_size; l++) {
-                var button = $("#BlockBtn" + (parseInt(row) - l) + "_" + (parseInt(col) + l));
+                button = $("#BlockBtn" + (parseInt(row) - l) + "_" + (parseInt(col) + l));
                 if (button.length && button.attr("data-symbol") === symbol) {
                     diagonalCount2++;
                 } else {
@@ -157,14 +156,10 @@
                 }
 
                 if (diagonalCount2 === win_size) {
-                    alert(getWinnerMessage(symbol));
-                    $(document).ready(function () {
-                        finishGame();
-                    });
+                    showWinnerAlert(symbol);
                     return;
                 }
             }
-
 
             // Si aucune condition de victoire n'est satisfaite, vérifiez s'il y a une égalité
             if (isBoardFull()) {
@@ -211,20 +206,22 @@
             }
         }
 
-        function finishGame() {
-            gameFinished = true;
-            $.ajax({
-                url: '/update_game_status/{{ object.id }}/',
-                type: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    console.log('Success:', data);
-                    // Add any additional actions you want to perform after the game is finished
-                },
-                error: function (error) {
-                    console.error('Error:', error);
-                }
-            });
+        function finishGame(winningSymbol) {
+            if (!gameFinished) {
+                gameFinished = true;
+                $.ajax({
+                    url: '/update_game_status/{{ object.id }}/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log('Success:', data);
+                    },
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+                alert(getWinnerMessage(winningSymbol));
+            }
         }
 
         function updateGrid() {
@@ -244,10 +241,6 @@
         }
 
         function updateGridDisplay(gridCells) {
-            // Clear the existing symbols on the grid
-            $('.BlockBtn').html('');
-
-            // Update the grid with the retrieved symbols
             gridCells.forEach(function (cell) {
                 var row = cell.row;
                 var col = cell.col;
@@ -258,6 +251,8 @@
                 button.prop("disabled", true);
                 button.attr("data-symbol", symbol);
             });
+            var lastMove = gridCells[gridCells.length - 1];
+            checkWinner(lastMove.row, lastMove.col, lastMove.symbol);
         }
 
         function updateDatasPlayer2() {
