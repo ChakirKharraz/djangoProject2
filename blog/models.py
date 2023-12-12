@@ -27,7 +27,7 @@ class Game(models.Model):
     win_size = models.PositiveIntegerField(default=3)
     private = models.BooleanField(default=False)
     winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='games_won')
-
+    currentTurn = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_turn')
 
     def __str__(self):
         return self.title

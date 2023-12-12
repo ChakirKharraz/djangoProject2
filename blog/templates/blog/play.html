@@ -45,12 +45,18 @@
         var gameFinished = false;
         var gameId = '{{ object.id }}';
 
+
         function btnClk(row, col) {
-            // Vérifier si la partie est terminée
-            if (gameFinished) {
+
+            console.log('currentUser ' + getUserTurn())
+            if (gameFinished || '{{ request.user }}' !== getUserTurn()) {
+                console.log("Conditions not met. Returning...");
                 return;
             }
-            var symbol = getCurrentPlayerSymbol();
+
+            let currentSymbol = getSymbol();
+            console.log("adjsioaqdjqsd AAAAAAAAA " +currentSymbol);
+
             $.ajax({
                 url: '/store_cell/',
                 type: 'POST',
@@ -58,7 +64,7 @@
                     'game_id': '{{ object.id }}',
                     'row': row,
                     'col': col,
-                    'symbol': symbol,
+                    'symbol': currentSymbol,
                 },
                 success: function (data) {
                     console.log('Cell stored successfully:', data);
@@ -68,26 +74,71 @@
                 }
             });
 
-            checkWinner(row, col, symbol);
+
+            checkWinner(row, col, currentSymbol);
+
         }
 
-        function getCurrentPlayerSymbol() {
-            var currentPlayer = '{{ request.user }}';
+        function getUserTurn() {
+            var user;
+            $.ajax({
+                url: '/get_user/{{ object.id }}/',
+                type: 'GET',
+                dataType: 'json',
+                async: false,
+                success: function (data) {
+                    user = data.currentUser;
+                    console.log('LE USER EST ' + user);
+                },
+                error: function (error) {
+                    console.error('Error getting UserTurn:', error);
+                    user = ' ';
+                }
+            });
 
-            console.log("Current Player: " + currentPlayer);
+            return user;
+        }
 
-            if (currentPlayer === '{{ object.game_author.username }}') {
-                return '{{ object.game_author.profile.symbol }}';
-            } else if (currentPlayer === '{{ object.game_player2.username }}') {
-                return '{{ object.game_player2.profile.symbol }}';
-            }
+        function getSymbol() {
+            var symbol;
+            $.ajax({
+                url: '/get_symbol/{{ object.id }}/',
+                type: 'GET',
+                dataType: 'json',
+                async: false,
+                success: function (data) {
+                    symbol = data.currentSymbol;
+                    console.log('Le symBOLE EST  ' + symbol);
+                },
+                error: function (error) {
+                    console.error('Error getting symbol:', error);
+                    symbol = '';
+                }
+            });
 
-            return '';
+            return symbol;
+        }
+
+
+
+        function switchTurn() {
+            $.ajax({
+                url: '/switch_turn/{{ object.id }}/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log('Turn switched successfully:', data);
+                    /*currentSymbol = data.currentSymbol;
+                    console.log(currentSymbol);*/
+                },
+                error: function (error) {
+                    console.error('Error switching turn:', error);
+                }
+            });
+
         }
 
         function checkWinner(row, col, symbol) {
-            var position = row + "_" + col;
-            var currentPlayerSymbol = getCurrentPlayerSymbol();
             var horizontalCount = 0;
             var verticalCount = 0;
             var diagonalCount1 = 0;
@@ -161,32 +212,32 @@
                 }
             }
 
-            // Si aucune condition de victoire n'est satisfaite, vérifiez s'il y a une égalité
             if (isBoardFull()) {
                 alert("La partie est terminée. Match nul!");
                 $(document).ready(function () {
                     finishGame();
                 });
             }
+            switchTurn();
         }
 
         function getWinnerMessage(symbol) {
-            // Récupérer le pseudo du joueur associé au symbole
+
             var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
             return winnerUsername + " a gagné!";
         }
 
         function isBoardFull() {
-            // Vérifier si toutes les cases sont remplies
+
             for (var i = 1; i <= grid_size; i++) {
                 for (var j = 1; j <= grid_size; j++) {
                     var button = $("#BlockBtn" + i + "_" + j);
                     if (button.attr("data-symbol") === " ") {
-                        return false; // Il y a une case vide, la partie continue
+                        return false;
                     }
                 }
             }
-            return true; // Toutes les cases sont remplies, c'est un match nul
+            return true;
         }
 
 
@@ -242,18 +293,23 @@
 
         function updateGridDisplay(gridCells) {
             gridCells.forEach(function (cell) {
-                var row = cell.row;
-                var col = cell.col;
-                var symbol = cell.symbol;
+                if (cell && cell.row !== undefined && cell.col !== undefined && cell.symbol !== undefined) {
+                    var row = cell.row;
+                    var col = cell.col;
+                    var symbol = cell.symbol;
 
-                var button = $("#BlockBtn" + row + "_" + col);
-                button.html(symbol);
-                button.prop("disabled", true);
-                button.attr("data-symbol", symbol);
+                    var button = $("#BlockBtn" + row + "_" + col);
+                    button.html(symbol);
+                    button.prop("disabled", true);
+                    button.attr("data-symbol", symbol);
+                }
             });
             var lastMove = gridCells[gridCells.length - 1];
-            checkWinner(lastMove.row, lastMove.col, lastMove.symbol);
+            if (lastMove && lastMove.row !== undefined && lastMove.col !== undefined && lastMove.symbol !== undefined) {
+                checkWinner(lastMove.row, lastMove.col, lastMove.symbol);
+            }
         }
+
 
         function updateDatasPlayer2() {
             if ($("#player2").text() === "Player 2: None") {
@@ -262,7 +318,6 @@
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
-                        console.log(data.player2);
                         $("#player2").text("Player 2: " + data.player2);
                     },
                     error: function (error) {
@@ -272,11 +327,10 @@
             }
         }
 
-        // Fetch and update the grid every second
-        setInterval(updateGrid, 1000);
-        setInterval(updateDatasPlayer2, 1000);
-
         $(document).ready(function () {
+            setInterval(updateGrid, 1000);
+            setInterval(updateDatasPlayer2, 1000);
+
             checkWindowSize();
             $(window).resize(checkWindowSize);
 

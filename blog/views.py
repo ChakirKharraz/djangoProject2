@@ -100,6 +100,7 @@ class GameCreateView(LoginRequiredMixin, CreateView):
             messages.error(self.request, 'Please choose a win size between 3 and the selected grid size.')
             return self.form_invalid(form)
 
+        form.instance.currentTurn = self.request.user
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -219,37 +220,92 @@ def update_game_status(request, game_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
 @csrf_exempt
 def store_cell(request):
     if request.method == 'POST':
-        game_id = request.POST.get('game_id')
-        row = request.POST.get('row')
-        col = request.POST.get('col')
-        symbol = request.POST.get('symbol')
+        try:
+            game_id = request.POST.get('game_id')
+            row = request.POST.get('row')
+            col = request.POST.get('col')
+            symbol = request.POST.get('symbol')
 
-        # Replace 'Game' with the actual name of your game model
-        game = Game.objects.get(id=game_id)
+            game = get_object_or_404(Game, id=game_id)
 
-        # Store the cell information in the database
-        grid_cell = GridCell.objects.create(game=game, row=row, col=col, symbol=symbol)
+            # Store the cell information in the database
+            grid_cell = GridCell.objects.create(game=game, row=row, col=col, symbol=symbol)
 
-        return JsonResponse({'success': True})
+            game.currentTurn = game.game_author if game.currentTurn == game.game_player2 else game.game_player2
+            game.save()
+
+            return JsonResponse({'success': True})
+        except Game.DoesNotExist:
+            return JsonResponse({'error': 'Game not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 def get_grid_cells(request, game_id):
     grid_cells = GridCell.objects.filter(game_id=game_id).values('row', 'col', 'symbol')
-    return JsonResponse({'success': True,'grid_cells': list(grid_cells)})
+    return JsonResponse({'success': True, 'grid_cells': list(grid_cells)})
+
 
 def updateDatasP2(request, game_id):
     game = get_object_or_404(Game, id=game_id)
 
-    if game.game_player2==None:
+    if game.game_player2 == None:
         player2 = "None"
     else:
         player2 = game.game_player2.username
 
     return JsonResponse({'success': True, 'player2': player2})
+
+
+def switch_turn(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+
+        print(f"Before switching: currentTurn={game.currentTurn}")
+        if game.currentTurn.username == game.game_author.username:
+            game.currentTurn = game.game_player2
+            currentSymbol = game.game_player2.profile.symbol
+
+        else:
+            game.currentTurn = game.game_author
+            currentSymbol = game.game_author.profile.symbol
+
+        currentUser = game.currentTurn.username;
+
+        print(f"After switching: CURRENT SYMBOL={currentSymbol}")
+        print(f"After switching: currentTurn={game.currentTurn}")
+        game.save()
+        print(f"After saving: currentTurn={game.currentTurn}")
+
+        return JsonResponse({'message': 'Turn switched successfully', 'currentSymbol': currentSymbol, 'currentUser': currentUser})
+    except Game.DoesNotExist:
+        return JsonResponse({'error': 'Game not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_user(request, game_id):
+
+    game = Game.objects.get(pk=game_id)
+    currentUser = game.currentTurn.username
+
+    return JsonResponse({'currentUser': currentUser})
+
+
+def get_symbol(request, game_id):
+
+    game = Game.objects.get(pk=game_id)
+    currentSymbol = game.currentTurn.profile.symbol
+
+    return JsonResponse({'currentSymbol': currentSymbol})
+
+
 
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About'})

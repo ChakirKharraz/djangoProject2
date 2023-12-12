@@ -2,7 +2,7 @@ from django.urls import path
 from .views import PostListView, PostDetailView, PostCreateView, PostUpdateView, PostDeleteView, UserPostListView
 from . import views
 from .views import GameCreateView, GameDetailView, GameListView, JoinGameView
-from .views import update_game_status, store_cell, get_grid_cells, updateDatasP2
+from .views import update_game_status, store_cell, get_grid_cells, updateDatasP2, switch_turn, get_user, get_symbol
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -20,4 +20,9 @@ urlpatterns = [
     path('store_cell/', store_cell, name='store_cell'),
     path('get_grid_cells/<int:game_id>/', get_grid_cells, name='get_grid_cells'),
     path('updateDatasPlayer2/<int:game_id>/', updateDatasP2, name='updateDatasPlayer2'),
+    path('switch_turn/<int:game_id>/', switch_turn, name='switch-turn'),
+    path('get_user/<int:game_id>/', get_user, name='get_user'),
+    path('get_symbol/<int:game_id>/', get_symbol, name='get_symbol'),
+
+
 ]
