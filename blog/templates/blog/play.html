@@ -44,18 +44,27 @@
         var win_size = {{ object.win_size }};
         var gameFinished = false;
         var gameId = '{{ object.id }}';
+        var processingClick = false;
+
+        function setProcessingClick(value) {
+            processingClick = value;
+        }
 
 
         function btnClk(row, col) {
 
             console.log('currentUser ' + getUserTurn())
-            if (gameFinished || '{{ request.user }}' !== getUserTurn()) {
+            if (processingClick || gameFinished || '{{ request.user }}' !== getUserTurn()) {
                 console.log("Conditions not met. Returning...");
                 return;
+
             }
 
+            setProcessingClick(true);
+
             let currentSymbol = getSymbol();
-            console.log("adjsioaqdjqsd AAAAAAAAA " +currentSymbol);
+            console.log("adjsioaqdjqsd AAAAAAAAA " + currentSymbol);
+            $(".grid-button").prop("disabled", true);
 
             $.ajax({
                 url: '/store_cell/',
@@ -68,15 +77,21 @@
                 },
                 success: function (data) {
                     console.log('Cell stored successfully:', data);
+                    setProcessingClick(false);
+
                 },
                 error: function (error) {
                     console.error('Error storing cell:', error);
+                    setProcessingClick(false);
+                },
+                complete: function () {
+
+                    $(".grid-button").prop("disabled", false);
                 }
             });
 
-
             checkWinner(row, col, currentSymbol);
-
+            switchTurn();
         }
 
         function getUserTurn() {
@@ -120,16 +135,15 @@
         }
 
 
-
         function switchTurn() {
+            setProcessingClick(true);
             $.ajax({
                 url: '/switch_turn/{{ object.id }}/',
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
                     console.log('Turn switched successfully:', data);
-                    /*currentSymbol = data.currentSymbol;
-                    console.log(currentSymbol);*/
+
                 },
                 error: function (error) {
                     console.error('Error switching turn:', error);
@@ -215,15 +229,21 @@
             if (isBoardFull()) {
                 alert("La partie est terminée. Match nul!");
                 $(document).ready(function () {
-                    finishGame();
+                    finishGame("Null");
                 });
             }
-            switchTurn();
+
         }
 
         function getWinnerMessage(symbol) {
+            var winnerUsername
+            if (symbol === "null") {
+                return "Pas de Winner, Match Nul!";
+            } else {
+                winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
+                return winnerUsername + " a gagné!";
+            }
 
-            var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
             return winnerUsername + " a gagné!";
         }
 
