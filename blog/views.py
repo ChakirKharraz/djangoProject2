@@ -174,16 +174,17 @@ class JoinGameView(LoginRequiredMixin, View):
 
 def update_game_status(request, game_id):
     try:
+        winning_symbol = request.GET.get('winningSymbol')
         game = Game.objects.get(pk=game_id)
 
         # Set the finished attribute to True
         game.finished = True
 
         # Determine the winner and update the winner attribute
-        current_player = request.user
-        if current_player == game.game_author:
+
+        if winning_symbol == game.game_author.profile.symbol:
             game.winner = game.game_author
-        elif current_player == game.game_player2:
+        elif winning_symbol == game.game_player2.profile.symbol:
             game.winner = game.game_player2
 
         game.save()

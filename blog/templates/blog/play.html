@@ -7,13 +7,11 @@
         <p>EXPAND THE WINDOW TO VIEW THE GAME GRID</p>
     </div>
 
-    {% if object.game_finished %}
-        {% if object.winner %}
-            <h2>Partie gagnée par {{ object.winner.username }}</h2>
-        {% else %}
-            <h2>Match nul!</h2>
-        {% endif %}
-    {% else %}
+    <div id="waitingRoom">
+        <h1 style="font-size: 40px; color: blueviolet;">WAITING FOR ANOTHER PLAYER</h1>
+    </div>
+
+    <div id="game" style="display: none;">
         <h1 style="font-size: 20px">Name : {{ object.title }}</h1>
         <p>Grid size: {{ object.grid_size }}</p>
         <p>Align to win: {{ object.win_size }}</p>
@@ -21,7 +19,7 @@
         <p>Player 1: {{ object.game_author }}</p>
         <p id="player2">Player 2: None</p>
 
-        <table class="game_tbl">
+        <table class="game_tbl" id="gameTable" style="display: none;">
             {% for row in "x"|ljust:object.grid_size %}
                 <tr>
                     {% for col in "x"|ljust:object.grid_size %}
@@ -34,8 +32,8 @@
                 </tr>
             {% endfor %}
         </table>
-    {% endif %}
-
+        <button id="abandonBtn" onclick="abandonGame('{{ request.user.username }}')">Abandonner</button>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
@@ -44,27 +42,18 @@
         var win_size = {{ object.win_size }};
         var gameFinished = false;
         var gameId = '{{ object.id }}';
-        var processingClick = false;
-
-        function setProcessingClick(value) {
-            processingClick = value;
-        }
 
 
         function btnClk(row, col) {
 
             console.log('currentUser ' + getUserTurn())
-            if (processingClick || gameFinished || '{{ request.user }}' !== getUserTurn()) {
+            if (gameFinished || '{{ request.user }}' !== getUserTurn()) {
                 console.log("Conditions not met. Returning...");
                 return;
-
             }
-
-            setProcessingClick(true);
 
             let currentSymbol = getSymbol();
             console.log("adjsioaqdjqsd AAAAAAAAA " + currentSymbol);
-            $(".grid-button").prop("disabled", true);
 
             $.ajax({
                 url: '/store_cell/',
@@ -77,20 +66,12 @@
                 },
                 success: function (data) {
                     console.log('Cell stored successfully:', data);
-                    setProcessingClick(false);
-
                 },
                 error: function (error) {
                     console.error('Error storing cell:', error);
-                    setProcessingClick(false);
-                },
-                complete: function () {
-
-                    $(".grid-button").prop("disabled", false);
                 }
             });
 
-            checkWinner(row, col, currentSymbol);
             switchTurn();
         }
 
@@ -136,14 +117,14 @@
 
 
         function switchTurn() {
-            setProcessingClick(true);
             $.ajax({
                 url: '/switch_turn/{{ object.id }}/',
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
                     console.log('Turn switched successfully:', data);
-
+                    /*currentSymbol = data.currentSymbol;
+                    console.log(currentSymbol);*/
                 },
                 error: function (error) {
                     console.error('Error switching turn:', error);
@@ -229,21 +210,15 @@
             if (isBoardFull()) {
                 alert("La partie est terminée. Match nul!");
                 $(document).ready(function () {
-                    finishGame("Null");
+                    finishGame();
                 });
             }
 
         }
 
         function getWinnerMessage(symbol) {
-            var winnerUsername
-            if (symbol === "null") {
-                return "Pas de Winner, Match Nul!";
-            } else {
-                winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
-                return winnerUsername + " a gagné!";
-            }
 
+            var winnerUsername = (symbol === '{{ object.game_author.profile.symbol }}') ? '{{ object.game_author.username }}' : '{{ object.game_player2.username }}';
             return winnerUsername + " a gagné!";
         }
 
@@ -284,6 +259,7 @@
                     url: '/update_game_status/{{ object.id }}/',
                     type: 'GET',
                     dataType: 'json',
+                    data: {winningSymbol: winningSymbol},
                     success: function (data) {
                         console.log('Success:', data);
                     },
@@ -302,7 +278,7 @@
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
-                    // Update the grid based on the retrieved data
+
                     updateGridDisplay(data.grid_cells);
                 },
                 error: function (error) {
@@ -331,6 +307,33 @@
         }
 
 
+        function abandonGame(currentPlayer) {
+            if (confirm("Êtes-vous sûr de vouloir abandonner la partie?")) {
+                var winningSymbol;
+                if(currentPlayer === '{{ object.game_author.username }}'){
+                    winningSymbol = '{{ object.game_player2.profile.symbol }}';
+                }else{
+                    winningSymbol = '{{ object.game_author.profile.symbol }}';
+                }
+
+                $.ajax({
+                    url: '/update_game_status/{{ object.id }}/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { winningSymbol: winningSymbol },
+                    success: function (data) {
+                        console.log('Success:', data);
+                        alert(getWinnerMessage(winningSymbol));
+                        gameFinished = true;
+
+                    },
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        }
+
         function updateDatasPlayer2() {
             if ($("#player2").text() === "Player 2: None") {
                 $.ajax({
@@ -339,6 +342,15 @@
                     dataType: 'json',
                     success: function (data) {
                         $("#player2").text("Player 2: " + data.player2);
+
+                        // Show the game table and hide the waiting room when there are two players
+                        if (data.player2 !== "None") {
+                            $("#game").show();
+                            $("#waitingRoom").hide();
+                        } else {
+                            $("#game").hide();
+                            $("#waitingRoom").show();
+                        }
                     },
                     error: function (error) {
                         console.error('Error fetching player2:', error);
