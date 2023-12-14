@@ -8,10 +8,10 @@
 }
 
 .BlockBtn {
-    height: 2.5vw; /* Adjust as needed */
-    width: 2.5vw; /* Adjust as needed */
+    height: 2.5vw;
+    width: 2.5vw;
     text-align: center;
-    font-size: 1.5vw; /* Adjust as needed */
+    font-size: 1.5vw;
     font-weight: bold;
     color: black;
     padding: 0;
@@ -26,12 +26,10 @@
     opacity: 1;
 }
 
-/* Adjust text size using vw for responsiveness */
 h1, p {
-    font-size: 10px; /* Adjust as needed */
+    font-size: 10px;
 }
 
-/* Adjust warning message font size */
 #warningMessage {
-    font-size: 1vw; /* Adjust as needed */
+    font-size: 1vw;
 }
