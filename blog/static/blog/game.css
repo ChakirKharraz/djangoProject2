@@ -32,4 +32,31 @@ h1, p {
 
 #warningMessage {
     font-size: 1vw;
+    color: red;
+    display: none;
+}
+
+#waitingText {
+    font-size: 40px;
+    color: #825cad;
+}
+
+#game {
+    display: none;
+}
+
+#abandonBtn {
+    position: fixed;
+    bottom: 100px;
+    right: 100px;
+    background-color: #825cad;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #000000;
+}
+
+#abandonBtn:hover {
+    color: white;
 }
