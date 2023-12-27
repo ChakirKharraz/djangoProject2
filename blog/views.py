@@ -177,43 +177,44 @@ def update_game_status(request, game_id):
         winning_symbol = request.GET.get('winningSymbol')
         game = Game.objects.get(pk=game_id)
 
-        # Set the finished attribute to True
-        game.finished = True
+        if not game.finished:
+            # Set the finished attribute to True
+            game.finished = True
 
-        # Determine the winner and update the winner attribute
+            # Determine the winner and update the winner attribute
+            if winning_symbol == game.game_author.profile.symbol:
+                game.winner = game.game_author
+            elif winning_symbol == game.game_player2.profile.symbol:
+                game.winner = game.game_player2
 
-        if winning_symbol == game.game_author.profile.symbol:
-            game.winner = game.game_author
-        elif winning_symbol == game.game_player2.profile.symbol:
-            game.winner = game.game_player2
+            game.save()
 
-        game.save()
+            # Update player profiles
+            author_profile = game.game_author.profile  # Access profile through user.profile
+            player2_profile = game.game_player2.profile  # Access profile through user.profile
 
-        # Update player profiles
-        author_profile = game.game_author.profile  # Access profile through user.profile
-        player2_profile = game.game_player2.profile  # Access profile through user.profile
+            if game.winner:
+                # Increment game_played for both players
+                author_profile.game_played += 1
+                player2_profile.game_played += 1
 
-        if game.winner:
-            # Increment game_played for both players
-            author_profile.game_played += 1
-            player2_profile.game_played += 1
+                # Update scores based on the game outcome
+                if game.winner == game.game_author:
+                    author_profile.score += 1
+                elif game.winner == game.game_player2:
+                    player2_profile.score += 1
+            else:
+                # In case of a draw, increment game_played for both players
+                author_profile.game_played += 1
+                player2_profile.game_played += 1
+                # No score update for a draw
 
-            # Update scores based on the game outcome
-            if game.winner == game.game_author:
-                author_profile.score += 1
-                player2_profile.score -= 1
-            elif game.winner == game.game_player2:
-                author_profile.score -= 1
-                player2_profile.score += 1
+            author_profile.save()
+            player2_profile.save()
+
+            return JsonResponse({'message': 'Game finished successfully'})
         else:
-            # In case of a draw, increment game_played for both players
-            author_profile.game_played += 1
-            player2_profile.game_played += 1
-
-        author_profile.save()
-        player2_profile.save()
-
-        return JsonResponse({'message': 'Game finished successfully'})
+            return JsonResponse({'message': 'Game already finished'})
     except Game.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
     except Profile.DoesNotExist:
@@ -305,6 +306,22 @@ def get_symbol(request, game_id):
     currentSymbol = game.currentTurn.profile.symbol
 
     return JsonResponse({'currentSymbol': currentSymbol})
+
+
+def check_game_status(request, game_id):
+    game = get_object_or_404(Game, id=game_id)  # Assurez-vous de remplacer YourGameModel par le modèle de votre jeu
+    game_data = {
+        'gameFinished': game.finished,
+        'winningSymbol': game.winner.profile.symbol if game.finished and game.winner and game.winner.profile else None,
+    }
+    return JsonResponse(game_data)
+
+
+
+def update_current_turn(request, game_id):
+    game = get_object_or_404(Game, id=game_id)
+    current_turn = game.currentTurn.username if game.currentTurn else None
+    return JsonResponse({'currentTurn': current_turn})
 
 
 

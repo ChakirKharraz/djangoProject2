@@ -19,6 +19,7 @@
         <p>Room code: {{ object.room_code }}</p>
         <p>Player 1: {{ object.game_author }}</p>
         <p id="player2">Player 2: None</p>
+        <p id="currentTurn">Player Turn: </p>
 
         <table class="game_tbl">
             {% for row in "x"|ljust:object.grid_size %}
@@ -308,31 +309,24 @@
 
 
         function abandonGame(currentPlayer) {
-            if (confirm("Êtes-vous sûr de vouloir abandonner la partie?")) {
-                var winningSymbol;
-                if (currentPlayer === '{{ object.game_author.username }}') {
-                    winningSymbol = '{{ object.game_player2.profile.symbol }}';
-                } else {
-                    winningSymbol = '{{ object.game_author.profile.symbol }}';
-                }
+            if (!gameFinished) {
 
-                $.ajax({
-                    url: '/update_game_status/{{ object.id }}/',
-                    type: 'GET',
-                    dataType: 'json',
-                    data: {winningSymbol: winningSymbol},
-                    success: function (data) {
-                        console.log('Success:', data);
-                        alert(getWinnerMessage(winningSymbol));
-                        gameFinished = true;
+                if (confirm("Êtes-vous sûr de vouloir abandonner la partie?")) {
 
-                    },
-                    error: function (error) {
-                        console.error('Error:', error);
+                    console.log("currentPlayer " + currentPlayer)
+                    if (currentPlayer == '{{ object.game_author.username }}') {
+                        var winningSymbol = '{{ object.game_player2.profile.symbol }}';
+                    } else {
+                        var winningSymbol = '{{ object.game_author.profile.symbol }}';
                     }
-                });
+
+                    console.log("winningSymbol " + winningSymbol);
+
+                    finishGame(winningSymbol);
+                }
             }
         }
+
 
         function updateDatasPlayer2() {
             if ($("#player2").text() === "Player 2: None") {
@@ -359,9 +353,46 @@
             }
         }
 
+        function checkGameStatus() {
+            if (!gameFinished) {
+                $.ajax({
+                    url: '/check_game_status/{{ object.id }}/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.gameFinished === true) {
+                            gameFinished = true;
+                            alert("La partie est terminée. Le gagnant est : " + getWinnerMessage(data.winningSymbol));
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error checking game status:', error);
+                    }
+                });
+            }
+        }
+
+        function updateCurrentTurn() {
+
+            $.ajax({
+                url: '/update_current_turn/{{ object.id }}/',  // Make sure this URL is correct
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $("#currentTurn").text("Player Turn: " + data.currentTurn);
+                },
+                error: function (error) {
+                    console.error('Error fetching current turn:', error);
+                }
+            });
+
+        }
+
         $(document).ready(function () {
-            setInterval(updateGrid, 1000);
+            setInterval(updateGrid, 200);
             setInterval(updateDatasPlayer2, 1000);
+            setInterval(checkGameStatus, 200);
+            setInterval(updateCurrentTurn, 200);
 
             checkWindowSize();
             $(window).resize(checkWindowSize);
