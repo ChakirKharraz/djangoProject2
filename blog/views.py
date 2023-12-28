@@ -12,6 +12,8 @@ from users.models import Profile
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Count
 from django.db.models.functions import TruncDate
+from datetime import timedelta
+from django.utils import timezone
 
 def home(request):
     context = {
@@ -331,21 +333,31 @@ def StatsView(request):
 
 
 def get_game_statistics(request):
+    # Récupérer la date de création du compte de l'utilisateur
+    user_creation_date = request.user.date_joined.date()
+
+    # Récupérer la date actuelle
+    current_date = timezone.now().date()
+
+    # Générer la liste de toutes les dates entre la date de création et la date actuelle
+    all_dates = [user_creation_date + timedelta(days=i) for i in range((current_date - user_creation_date).days + 1)]
+
     # Récupérer les données de jeu
     games = Game.objects.filter(
         Q(game_author=request.user) | Q(game_player2=request.user),
-        finished=True  # Ajoutez cette condition pour inclure uniquement les parties terminées
+        finished=True,  # Condition pour inclure uniquement les parties terminées
+        date_posted__gte=user_creation_date  # Condition pour inclure les parties après la création du compte
     )
 
     # Agréger les données par date
     games_by_date = games.annotate(date=TruncDate('date_posted')).values('date').annotate(count=Count('id'))
     games_by_date_dict = {entry['date']: entry['count'] for entry in games_by_date}
 
-    # Convertir le dictionnaire en listes séparées pour Chart.js
-    dates = list(games_by_date_dict.keys())
-    games_played = list(games_by_date_dict.values())
+    # Remplir les données pour toutes les dates (y compris celles sans parties jouées)
+    games_played = [games_by_date_dict.get(date, 0) for date in all_dates]
 
-    return JsonResponse({'dates': dates, 'games_played': games_played})
+    return JsonResponse({'dates': all_dates, 'games_played': games_played})
+
 
 
 def about(request):
