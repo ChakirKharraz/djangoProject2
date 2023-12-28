@@ -208,11 +208,11 @@
                 }
             }
 
-            if (isBoardFull()) {
+            var boardFull = isBoardFull();
+
+            if (boardFull && !gameFinished) {
+                finishGame("Personne");  // Mark the game as finished without specifying a winner
                 alert("La partie est terminée. Match nul!");
-
-                showWinnerAlert("");
-
             }
 
         }
@@ -224,7 +224,6 @@
         }
 
         function isBoardFull() {
-
             for (var i = 1; i <= grid_size; i++) {
                 for (var j = 1; j <= grid_size; j++) {
                     var button = $("#BlockBtn" + i + "_" + j);
@@ -268,7 +267,12 @@
                         console.error('Error:', error);
                     }
                 });
-                alert(getWinnerMessage(winningSymbol));
+                if(winningSymbol=="Personne"){
+                    alert("Match Nul Personne a Gagné")
+                }else{
+                    alert(getWinnerMessage(winningSymbol));
+                }
+
             }
         }
 
