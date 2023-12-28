@@ -1,9 +1,9 @@
 from django.urls import path
 from .views import PostListView, PostDetailView, PostCreateView, PostUpdateView, PostDeleteView, UserPostListView
 from . import views
-from .views import GameCreateView, GameDetailView, GameListView, JoinGameView, StatsView
+from .views import GameCreateView, GameDetailView, GameListView, JoinGameView, StatsView, CustomStatsView
 from .views import (update_game_status, store_cell, get_grid_cells, updateDatasP2, switch_turn, get_user, get_symbol,
-                    check_game_status, update_current_turn, get_game_statistics, custom_stats)
+                    check_game_status, update_current_turn, get_game_statistics)
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -28,6 +28,6 @@ urlpatterns = [
     path('update_current_turn/<int:game_id>/', update_current_turn, name='update_current_turn'),
     path('stats/', StatsView, name='stats'),
     path('get_game_statistics/', get_game_statistics, name='get_game_statistics'),
-    path('custom-stats/', custom_stats, name='custom-stats'),
+    path('custom-stats/', CustomStatsView.as_view(), name='custom-stats'),
 
 ]
