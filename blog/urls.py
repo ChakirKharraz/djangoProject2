@@ -3,7 +3,7 @@ from .views import PostListView, PostDetailView, PostCreateView, PostUpdateView,
 from . import views
 from .views import GameCreateView, GameDetailView, GameListView, JoinGameView, StatsView, CustomStatsView, GlobalRankingsView
 from .views import (update_game_status, store_cell, get_grid_cells, updateDatasP2, switch_turn, get_user, get_symbol,
-                    check_game_status, update_current_turn, get_game_statistics)
+                    check_game_status, update_current_turn, get_game_statistics, get_second_player_symbol)
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -30,5 +30,6 @@ urlpatterns = [
     path('get_game_statistics/', get_game_statistics, name='get_game_statistics'),
     path('custom-stats/', CustomStatsView.as_view(), name='custom-stats'),
     path('global-rankings/', GlobalRankingsView.as_view(), name='global_rankings'),
+    path('get_second_player_symbol/', get_second_player_symbol, name='get_second_player_symbol'),
 
 ]

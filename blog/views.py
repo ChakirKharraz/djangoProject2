@@ -416,6 +416,17 @@ class GlobalRankingsView(LoginRequiredMixin, View):
 
         return JsonResponse(context)
 
+def get_second_player_symbol(request):
+    if request.method == 'GET':
+        game_id = request.GET.get('gameId')
+        game = get_object_or_404(Game, id=game_id)  # Replace with the actual model name
+
+        # Assuming your game_player2 has a profile attribute
+        second_player_symbol = game.game_player2.profile.symbol
+
+        return JsonResponse({'symbol': second_player_symbol})
+
+    return JsonResponse({'error': 'Invalid request'})
 
 def about(request):
     return render(request, 'blog/stats.html', {'title': 'About'})

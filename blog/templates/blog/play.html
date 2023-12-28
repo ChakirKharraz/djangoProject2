@@ -34,7 +34,7 @@
                 </tr>
             {% endfor %}
         </table>
-        <button id="abandonBtn" onclick="abandonGame('{{ request.user.username }}')">Abandonner</button>
+        <button id="abandonBtn" onclick="abandonGame('{{ request.user.username }}')">Give Up ?</button>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -267,9 +267,9 @@
                         console.error('Error:', error);
                     }
                 });
-                if(winningSymbol=="Personne"){
+                if (winningSymbol == "Personne") {
                     alert("Match Nul Personne a Gagné")
-                }else{
+                } else {
                     alert(getWinnerMessage(winningSymbol));
                 }
 
@@ -314,19 +314,35 @@
 
         function abandonGame(currentPlayer) {
             if (!gameFinished) {
-
                 if (confirm("Êtes-vous sûr de vouloir abandonner la partie?")) {
 
-                    console.log("currentPlayer " + currentPlayer)
-                    if (currentPlayer == '{{ object.game_author.username }}') {
-                        var winningSymbol = '{{ object.game_player2.profile.symbol }}';
-                    } else {
-                        var winningSymbol = '{{ object.game_author.profile.symbol }}';
-                    }
+                    // Use AJAX to fetch the second player's symbol
+                    $.ajax({
+                        url: '/get_second_player_symbol/',  // Replace with the actual URL
+                        type: 'GET',
+                        dataType: 'json',
+                        data: {gameId: '{{ object.id }}'},  // Pass the game ID or any necessary parameters
+                        success: function (data) {
+                            var winningSymbol;
+                            console.log("currentPlayer " + currentPlayer);
 
-                    console.log("winningSymbol " + winningSymbol);
+                            // Use the fetched symbol for the second player
+                            if (currentPlayer == '{{ object.game_author.username }}') {
+                                winningSymbol = data.symbol;  // Use the correct attribute from the response
+                                console.log("1ere condition");
+                            } else {
+                                winningSymbol = '{{ object.game_author.profile.symbol }}';
+                            }
 
-                    finishGame(winningSymbol);
+                            console.log("winningSymbol " + winningSymbol);
+
+                            // Call finishGame with the winningSymbol
+                            finishGame(winningSymbol);
+                        },
+                        error: function (error) {
+                            console.error('Error fetching second player symbol:', error);
+                        }
+                    });
                 }
             }
         }
