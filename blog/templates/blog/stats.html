@@ -2,7 +2,41 @@
 {% load crispy_forms_filters %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <h2>Historique</h2>
+
+    <style>
+        #custom-stats-results {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        #custom-stats-results p {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #custom-stats-results p:last-child {
+            border-bottom: none;
+        }
+
+        #custom-stats-results p.current-user {
+            background-color: #3498db; /* Blue color for the current user */
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #custom-stats-results p.no-rankings {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+
+
+    <h2>History</h2>
 
     <canvas id="gamesChart" width="400" height="200"></canvas>
 
@@ -42,7 +76,7 @@
                         data: {
                             labels: dates,
                             datasets: [{
-                                label: 'Parties jouées',
+                                label: 'Game played',
                                 data: gamesPlayed,
                                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -65,7 +99,7 @@
                                     beginAtZero: true,
                                     title: {
                                         display: true,
-                                        text: 'Parties jouées'
+                                        text: 'Game played'
                                     }
                                 }
                             }
@@ -89,11 +123,20 @@
                     resultsDiv.empty();
 
                     if (data.success) {
-                        for (const [user, score] of Object.entries(data.user_scores)) {
-                            resultsDiv.append(`<p>${user}: ${score} wins</p>`);
+                        if (Object.keys(data.user_scores).length === 0) {
+                            resultsDiv.append(`<p class="no-rankings">No rankings for this configuration.</p>`);
+                        } else {
+                            let rank = 1;  // Initialize rank counter
+                            const currentUser = data.current_user;
+
+                            for (const [user, score] of Object.entries(data.user_scores)) {
+                                const rowClass = user === currentUser ? 'current-user' : '';
+                                resultsDiv.append(`<p class="${rowClass}">${rank}. ${user}: ${score} wins</p>`);
+                                rank += 1;  // Increment rank for the next user
+                            }
                         }
                     } else {
-                        resultsDiv.append(`<p>Error: ${data.error}</p>`);
+                        resultsDiv.append(`<p class="no-rankings">Error: ${data.error}</p>`);
                     }
                 });
         }
