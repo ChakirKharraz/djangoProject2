@@ -2,9 +2,26 @@
 {% load crispy_forms_filters %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <h2>Statistiques</h2>
+    <h2>Historique</h2>
 
     <canvas id="gamesChart" width="400" height="200"></canvas>
+
+    <h2>Custom Stats</h2>
+
+    <form id="custom-stats-form">
+
+        <label for="grid-size">Grid Size:</label>
+        <input type="number" id="grid-size" name="grid_size" min="3" max="12" value="3">
+
+        <label for="win-size">Win Size:</label>
+        <input type="number" id="win-size" name="win_size" min="3" max="12" value="3">
+
+
+        <button type="button" onclick="getCustomStats()">Get Stats</button>
+    </form>
+
+    <div id="custom-stats-results"></div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -58,6 +75,28 @@
 
 
         });
+
+        function getCustomStats() {
+            const winSize = $('#win-size').val();
+            const gridSize = $('#grid-size').val();
+
+            // Fetch data from the custom-stats view
+            fetch(`/custom-stats/?win_size=${winSize}&grid_size=${gridSize}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display the results in the custom-stats-results div
+                    const resultsDiv = $('#custom-stats-results');
+                    resultsDiv.empty();
+
+                    if (data.success) {
+                        for (const [user, score] of Object.entries(data.user_scores)) {
+                            resultsDiv.append(`<p>${user}: ${score} wins</p>`);
+                        }
+                    } else {
+                        resultsDiv.append(`<p>Error: ${data.error}</p>`);
+                    }
+                });
+        }
     </script>
 
 {% endblock content %}

@@ -358,7 +358,35 @@ def get_game_statistics(request):
 
     return JsonResponse({'dates': all_dates, 'games_played': games_played})
 
+def custom_stats(request):
+    if request.method == 'GET':
+        # Get the values for win_size and grid_size from the request
+        win_size = int(request.GET.get('win_size', 3))
+        grid_size = int(request.GET.get('grid_size', 3))
 
+        # Ensure that win_size and grid_size are within the specified range
+        win_size = max(3, min(win_size, 12))
+        grid_size = max(3, min(grid_size, 12))
+
+        # Filter games based on win_size and grid_size
+        games = Game.objects.filter(win_size=win_size, grid_size=grid_size, finished=True)
+
+        # Create a dictionary to store user scores
+        user_scores = {}
+
+        # Iterate over the filtered games
+        for game in games:
+            # Check if there is a winner
+            if game.winner:
+                # Increment the score for the winner
+                user_scores[game.winner.username] = user_scores.get(game.winner.username, 0) + 1
+
+        # Sort the user_scores dictionary by score in descending order
+        sorted_user_scores = dict(sorted(user_scores.items(), key=lambda item: item[1], reverse=True))
+
+        return JsonResponse({'success': True, 'user_scores': sorted_user_scores})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 def about(request):
     return render(request, 'blog/stats.html', {'title': 'About'})
