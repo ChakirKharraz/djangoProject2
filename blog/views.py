@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Profile
 from django.views.decorators.csrf import csrf_exempt
+from collections import defaultdict
 
 def home(request):
     context = {
@@ -326,14 +327,29 @@ def update_current_turn(request, game_id):
 def StatsView(request):
     return render(request, 'blog/stats.html')
 
+
+from collections import defaultdict
+from django.http import JsonResponse
+from django.db.models import Q, Count
+from django.db.models.functions import TruncDate
+
 def get_game_statistics(request):
-    user = request.user
-    games = Game.objects.filter(game_author=user) | Game.objects.filter(game_player2=user)
-    game_data = {
-        'dates': [game.date_posted.strftime('%Y-%m-%d') for game in games],
-        'games_played': [1] * len(games),  # Ou utilisez len(games) pour le nombre réel de parties jouées
-    }
-    return JsonResponse(game_data)
+    # Récupérer les données de jeu
+    games = Game.objects.filter(
+        Q(game_author=request.user) | Q(game_player2=request.user),
+        finished=True  # Ajoutez cette condition pour inclure uniquement les parties terminées
+    )
+
+    # Agréger les données par date
+    games_by_date = games.annotate(date=TruncDate('date_posted')).values('date').annotate(count=Count('id'))
+    games_by_date_dict = {entry['date']: entry['count'] for entry in games_by_date}
+
+    # Convertir le dictionnaire en listes séparées pour Chart.js
+    dates = list(games_by_date_dict.keys())
+    games_played = list(games_by_date_dict.values())
+
+    return JsonResponse({'dates': dates, 'games_played': games_played})
+
 
 def about(request):
     return render(request, 'blog/stats.html', {'title': 'About'})

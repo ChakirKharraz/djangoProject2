@@ -9,53 +9,53 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Récupérer les données nécessaires depuis votre backend
-            fetch('{% url "get_game_statistics" %}')
-                .then(response => response.json())
-                .then(gameData => {
-                    const dates = gameData.dates;
-                    const gamesPlayed = gameData.games_played;
+    // Récupérer les données nécessaires depuis votre backend
+    fetch('{% url "get_game_statistics" %}')
+        .then(response => response.json())
+        .then(gameData => {
+            const dates = gameData.dates;
+            const gamesPlayed = gameData.games_played;
 
-                    // Créer le contexte du graphique
-                    const ctx = document.getElementById('gamesChart').getContext('2d');
+            // Créer le contexte du graphique
+            const ctx = document.getElementById('gamesChart').getContext('2d');
 
-                    // Configurer le graphique à barres avec l'adaptateur de date
-                    const gamesChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: 'Parties jouées',
-                                data: gamesPlayed,
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                x: [{
-                                    type: 'time',
-                                    time: {
-                                        unit: 'day'
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: 'Date'
-                                    }
-                                }],
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Parties jouées'
-                                    }
-                                }
+            // Configurer le graphique à barres avec l'adaptateur de date
+            const gamesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Parties jouées',
+                        data: gamesPlayed,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: [{
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }],
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Parties jouées'
                             }
                         }
-                    });
-                });
+                    }
+                }
+            });
         });
+});
     </script>
 {% endblock content %}
 
