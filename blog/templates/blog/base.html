@@ -17,6 +17,8 @@
     {% else %}
         <title>Django Blog</title>
     {% endif %}
+
+
 </head>
 <body>
 <header class="site-header">
@@ -31,10 +33,12 @@
                 <div class="navbar-nav mr-auto">
                     <a class="nav-item nav-link" href="{% url 'blog-home' %}">Home</a>
                     <a class="nav-item nav-link" href="{% url 'game-list' %}">PLAY !</a>
+
                 </div>
                 <!-- Navbar Right Side -->
                 <div class="navbar-nav">
                     {% if user.is_authenticated %}
+                        <a class="nav-item nav-link" href="{% url 'stats' %}">Stats</a>
                         <a class="nav-item nav-link" href="{% url 'post-create' %}">Create a Post</a>
                         <a class="nav-item nav-link" href="{% url 'game-create' %}">Create a Game</a>
                         <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
@@ -66,10 +70,7 @@
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<!--<script
-        src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-        crossorigin="anonymous"></script>-->
+
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>

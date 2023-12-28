@@ -11,7 +11,6 @@ from django.http import JsonResponse
 from users.models import Profile
 from django.views.decorators.csrf import csrf_exempt
 
-
 def home(request):
     context = {
         'posts': Post.objects.all()
@@ -324,6 +323,17 @@ def update_current_turn(request, game_id):
     return JsonResponse({'currentTurn': current_turn})
 
 
+def StatsView(request):
+    return render(request, 'blog/stats.html')
+
+def get_game_statistics(request):
+    user = request.user
+    games = Game.objects.filter(game_author=user) | Game.objects.filter(game_player2=user)
+    game_data = {
+        'dates': [game.date_posted.strftime('%Y-%m-%d') for game in games],
+        'games_played': [1] * len(games),  # Ou utilisez len(games) pour le nombre réel de parties jouées
+    }
+    return JsonResponse(game_data)
 
 def about(request):
-    return render(request, 'blog/about.html', {'title': 'About'})
+    return render(request, 'blog/stats.html', {'title': 'About'})
