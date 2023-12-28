@@ -10,7 +10,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Profile
 from django.views.decorators.csrf import csrf_exempt
-from collections import defaultdict
+from django.db.models import Q, Count
+from django.db.models.functions import TruncDate
 
 def home(request):
     context = {
@@ -328,10 +329,6 @@ def StatsView(request):
     return render(request, 'blog/stats.html')
 
 
-from collections import defaultdict
-from django.http import JsonResponse
-from django.db.models import Q, Count
-from django.db.models.functions import TruncDate
 
 def get_game_statistics(request):
     # Récupérer les données de jeu
