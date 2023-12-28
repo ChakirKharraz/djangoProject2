@@ -1,19 +1,20 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
-from .models import Post
+from .models import Post, Game, GridCell
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from .models import Game, GridCell
 from .forms import GameForm, JoinGameForm
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Profile
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.db.models.functions import TruncDate
 from datetime import timedelta
 from django.utils import timezone
+from django.core.serializers import serialize
+
 
 def home(request):
     context = {
@@ -288,7 +289,8 @@ def switch_turn(request, game_id):
         game.save()
         print(f"After saving: currentTurn={game.currentTurn}")
 
-        return JsonResponse({'message': 'Turn switched successfully', 'currentSymbol': currentSymbol, 'currentUser': currentUser})
+        return JsonResponse(
+            {'message': 'Turn switched successfully', 'currentSymbol': currentSymbol, 'currentUser': currentUser})
     except Game.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
     except Exception as e:
@@ -296,7 +298,6 @@ def switch_turn(request, game_id):
 
 
 def get_user(request, game_id):
-
     game = Game.objects.get(pk=game_id)
     currentUser = game.currentTurn.username
 
@@ -304,7 +305,6 @@ def get_user(request, game_id):
 
 
 def get_symbol(request, game_id):
-
     game = Game.objects.get(pk=game_id)
     currentSymbol = game.currentTurn.profile.symbol
 
@@ -320,16 +320,17 @@ def check_game_status(request, game_id):
     return JsonResponse(game_data)
 
 
-
 def update_current_turn(request, game_id):
     game = get_object_or_404(Game, id=game_id)
     current_turn = game.currentTurn.username if game.currentTurn else None
     return JsonResponse({'currentTurn': current_turn})
 
 
-def StatsView(request):
-    return render(request, 'blog/stats.html')
+class StatsView(LoginRequiredMixin, View):
+    template_name = 'blog/stats.html'
 
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
 
 
 def get_game_statistics(request):
@@ -357,6 +358,7 @@ def get_game_statistics(request):
     games_played = [games_by_date_dict.get(date, 0) for date in all_dates]
 
     return JsonResponse({'dates': all_dates, 'games_played': games_played})
+
 
 class CustomStatsView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
@@ -391,6 +393,29 @@ class CustomStatsView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+class GlobalRankingsView(LoginRequiredMixin, View):
+    template_name = 'blog/global_rankings.html'
+
+    def get(self, request, *args, **kwargs):
+        profiles = Profile.objects.all().order_by('-score')
+        current_user_username = self.request.user.username
+
+        # Serialize profiles for JSON response
+        serialized_profiles = [
+            {'user__username': profile.user.username, 'score': profile.score}
+            for profile in profiles
+        ]
+
+        context = {
+            'success': True,
+            'profiles': serialized_profiles,
+            'current_user': current_user_username
+        }
+
+        return JsonResponse(context)
+
 
 def about(request):
     return render(request, 'blog/stats.html', {'title': 'About'})
