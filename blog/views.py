@@ -13,12 +13,11 @@ from django.db.models import Q, Count, Sum
 from django.db.models.functions import TruncDate
 from datetime import timedelta
 from django.utils import timezone
-from django.core.serializers import serialize
 
 
 def home(request):
     context = {
-        'posts': Post.objects.all()
+        "posts": Post.objects.all()
     }
     return render(request, 'blog/home.html', context)
 
@@ -29,6 +28,29 @@ class PostListView(ListView):
     context_object_name = 'posts'
     ordering = ['-date_posted']
     paginate_by = 4
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        message = ""
+        if self.request.session['game_id']:
+            if self.request.session['game_id'] is not None and self.request.session['game_id'] != "":
+
+                game = Game.objects.get(id=self.request.session['game_id'])
+                if game.abandonned:
+                    if game.winner == self.request.user:
+                        message = "YOU WON! Your opponent just gave up"
+                    else:
+                        message = "You gave up your last game!"
+
+
+        messages.success(self.request, message)
+        self.request.session['game_id'] = ""
+
+        # Add the message to the context
+        context['game_message'] = message
+
+        return context
 
 
 class UserPostListView(ListView):
@@ -259,6 +281,7 @@ def get_grid_cells(request, game_id):
 
 
 def updateDatasP2(request, game_id):
+    request.session['game_id'] = game_id
     game = get_object_or_404(Game, id=game_id)
 
     if game.game_player2 == None:
@@ -312,7 +335,7 @@ def get_symbol(request, game_id):
 
 
 def check_game_status(request, game_id):
-    game = get_object_or_404(Game, id=game_id)  # Assurez-vous de remplacer YourGameModel par le modèle de votre jeu
+    game = get_object_or_404(Game, id=game_id)
     game_data = {
         'gameFinished': game.finished,
         'winningSymbol': game.winner.profile.symbol if game.finished and game.winner and game.winner.profile else None,
@@ -416,17 +439,22 @@ class GlobalRankingsView(LoginRequiredMixin, View):
 
         return JsonResponse(context)
 
+
 def get_second_player_symbol(request):
     if request.method == 'GET':
         game_id = request.GET.get('gameId')
         game = get_object_or_404(Game, id=game_id)  # Replace with the actual model name
 
         # Assuming your game_player2 has a profile attribute
+        game.abandonned = True
+        game.save()
+
         second_player_symbol = game.game_player2.profile.symbol
 
         return JsonResponse({'symbol': second_player_symbol})
 
     return JsonResponse({'error': 'Invalid request'})
+
 
 def about(request):
     return render(request, 'blog/stats.html', {'title': 'About'})

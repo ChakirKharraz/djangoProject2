@@ -28,6 +28,7 @@ class Game(models.Model):
     private = models.BooleanField(default=False)
     winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='games_won')
     currentTurn = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_turn')
+    abandonned = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
