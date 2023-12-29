@@ -33,8 +33,8 @@ class PostListView(ListView):
         context = super().get_context_data(**kwargs)
 
         message = ""
-        if self.request.session['game_id']:
-            if self.request.session['game_id'] is not None and self.request.session['game_id'] != "":
+        if 'game_id' in self.request.session and (
+                self.request.session['game_id'] is not None and self.request.session['game_id'] != ""):
 
                 game = Game.objects.get(id=self.request.session['game_id'])
                 if game.abandonned:
