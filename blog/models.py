@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-
+# Model for blog posts
 class Post(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
@@ -16,6 +16,7 @@ class Post(models.Model):
     def get_absolute_url(self):
         return reverse('post-detail', kwargs={'pk': self.pk})
 
+# Model for the game
 class Game(models.Model):
     title = models.CharField(max_length=100)
     date_posted = models.DateTimeField(default=timezone.now)
@@ -50,6 +51,7 @@ class Game(models.Model):
         super().save(*args, **kwargs)
 
 
+# Model for individual grid cells in a game
 class GridCell(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     row = models.IntegerField()

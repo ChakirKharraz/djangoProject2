@@ -3,17 +3,19 @@
 {% block content %}
     <link rel="stylesheet" type="text/css" href="{% static 'blog/game.css' %}">
 
-
+    <!-- Warning message for small window size -->
     <div id="warningMessage">
         <p>EXPAND THE WINDOW TO VIEW THE GAME GRID</p>
     </div>
 
+    <!-- Waiting room for players to join -->
     <div id="waitingRoom">
         <h1 id="waitingText">WAITING FOR ANOTHER PLAYER</h1>
     </div>
 
+    <!-- Game grid and information display -->
     <div id="game">
-        <h1 style="font-size: 20px">Name : {{ object.title }}</h1>
+        <h1 style="font-size: 20px">Name: {{ object.title }}</h1>
         <p>Grid size: {{ object.grid_size }}</p>
         <p>Align to win: {{ object.win_size }}</p>
         <p>Room code: {{ object.room_code }}</p>
@@ -21,11 +23,13 @@
         <p id="player2">Player 2: None</p>
         <p id="currentTurn">Player Turn: </p>
 
+        <!-- Game grid represented as a table -->
         <table class="game_tbl">
             {% for row in "x"|ljust:object.grid_size %}
                 <tr>
                     {% for col in "x"|ljust:object.grid_size %}
                         <td>
+                            <!-- Button for each cell in the grid -->
                             <button class="BlockBtn" id="BlockBtn{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
                                     data-symbol=" "
                                     onclick="btnClk('{{ forloop.parentloop.counter }}', '{{ forloop.counter }}')"></button>
@@ -34,27 +38,30 @@
                 </tr>
             {% endfor %}
         </table>
+        <!-- Button to give up the game -->
         <button id="abandonBtn" onclick="abandonGame('{{ request.user.username }}')">Give Up ?</button>
     </div>
 
+    <!-- Include jQuery library -->
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script>
+    // Global variables for game state
         var grid_size = {{object.grid_size}};
         var win_size = {{object.win_size}};
         var gameFinished = false;
         var gameId = '{{object.id}}';
 
 
+        // Function for handling button click in the grid
         function btnClk(row, col) {
 
-            console.log('currentUser ' + getUserTurn())
+            // Check conditions before allowing a move
             if (gameFinished || '{{ request.user }}' !== getUserTurn()) {
                 console.log("Conditions not met. Returning...");
                 return;
             }
 
             let currentSymbol = getSymbol();
-            console.log("adjsioaqdjqsd AAAAAAAAA " + currentSymbol);
 
             $.ajax({
                 url: '/store_cell/',
@@ -66,7 +73,7 @@
                     'symbol': currentSymbol,
                 },
                 success: function (data) {
-                    console.log('Cell stored successfully:', data);
+
                 },
                 error: function (error) {
                     console.error('Error storing cell:', error);
@@ -76,6 +83,7 @@
             switchTurn();
         }
 
+        // Function to get the user whose turn it is
         function getUserTurn() {
             var user;
             $.ajax({
@@ -85,7 +93,6 @@
                 async: false,
                 success: function (data) {
                     user = data.currentUser;
-                    console.log('LE USER EST ' + user);
                 },
                 error: function (error) {
                     console.error('Error getting UserTurn:', error);
@@ -96,6 +103,8 @@
             return user;
         }
 
+
+        // Function to get the symbol for the current player
         function getSymbol() {
             var symbol;
             $.ajax({
@@ -105,7 +114,6 @@
                 async: false,
                 success: function (data) {
                     symbol = data.currentSymbol;
-                    console.log('Le symBOLE EST  ' + symbol);
                 },
                 error: function (error) {
                     console.error('Error getting symbol:', error);
@@ -117,15 +125,14 @@
         }
 
 
+        // Function to switch turns between players
         function switchTurn() {
             $.ajax({
                 url: '/switch_turn/{{ object.id }}/',
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
-                    console.log('Turn switched successfully:', data);
-                    /*currentSymbol = data.currentSymbol;
-                    console.log(currentSymbol);*/
+
                 },
                 error: function (error) {
                     console.error('Error switching turn:', error);
@@ -134,6 +141,7 @@
 
         }
 
+        // Function to check for a winner after each move
         function checkWinner(row, col, symbol) {
             var horizontalCount = 0;
             var verticalCount = 0;
@@ -236,6 +244,7 @@
         }
 
 
+        // Check and adjust window size for optimal game display
         function checkWindowSize() {
             var gameTable = $(".game_tbl");
             var warningMessage = $("#warningMessage");
@@ -252,6 +261,7 @@
             }
         }
 
+        // Function to finish the game and display the result
         function finishGame(winningSymbol) {
             if (!gameFinished) {
                 gameFinished = true;
@@ -276,6 +286,7 @@
             }
         }
 
+        // Function to update the displayed grid based on server data
         function updateGrid() {
 
             $.ajax({
@@ -292,6 +303,7 @@
             });
         }
 
+        // Function to update the displayed grid based on server data
         function updateGridDisplay(gridCells) {
             gridCells.forEach(function (cell) {
                 if (cell && cell.row !== undefined && cell.col !== undefined && cell.symbol !== undefined) {
@@ -312,6 +324,7 @@
         }
 
 
+        // Function to update the display when a player abandons the game
         function abandonGame(currentPlayer) {
             if (!gameFinished) {
                 if (confirm("Êtes-vous sûr de vouloir abandonner la partie?")) {
@@ -329,7 +342,7 @@
                             // Use the fetched symbol for the second player
                             if (currentPlayer == '{{ object.game_author.username }}') {
                                 winningSymbol = data.symbol;  // Use the correct attribute from the response
-                                console.log("1ere condition");
+
                             } else {
                                 winningSymbol = '{{ object.game_author.profile.symbol }}';
                             }
@@ -348,6 +361,7 @@
         }
 
 
+        // Function to update information about Player 2
         function updateDatasPlayer2() {
             if ($("#player2").text() === "Player 2: None") {
                 $.ajax({
@@ -373,6 +387,7 @@
             }
         }
 
+        // Function to check the current game status
         function checkGameStatus() {
             if (!gameFinished) {
                 $.ajax({
@@ -392,6 +407,7 @@
             }
         }
 
+        // Function to update the information about the current turn
         function updateCurrentTurn() {
 
             $.ajax({
@@ -408,15 +424,16 @@
 
         }
 
+        // Set intervals to periodically update various aspects of the game
         $(document).ready(function () {
             setInterval(updateGrid, 200);
             setInterval(updateDatasPlayer2, 1000);
             setInterval(checkGameStatus, 200);
             setInterval(updateCurrentTurn, 200);
 
+            // Check and adjust window size for optimal game display
             checkWindowSize();
             $(window).resize(checkWindowSize);
-
         });
     </script>
 
