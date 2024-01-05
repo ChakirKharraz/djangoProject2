@@ -397,7 +397,7 @@
                     success: function (data) {
                         if (data.gameFinished === true) {
                             gameFinished = true;
-                            alert("La partie est terminée. Le gagnant est : " + getWinnerMessage(data.winningSymbol));
+                            alert("La partie est terminée." + getWinnerMessage(data.winningSymbol));
                         }
                     },
                     error: function (error) {
