@@ -1,11 +1,11 @@
 body {
-  background: #fafafa;
-  color: #333333;
+  background: #313131;
+  color: #ffffff;
   margin-top: 5rem;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #444444;
+  color: #ffffff;
 }
 
 ul {
@@ -29,7 +29,7 @@ ul {
 }
 
 .content-section {
-  background: #ffffff;
+  background: #494949;
   padding: 10px 20px;
   border: 1px solid #dddddd;
   border-radius: 3px;
@@ -37,11 +37,11 @@ ul {
 }
 
 .article-title {
-  color: #444444;
+  color: #ffffff;
 }
 
 a.article-title:hover {
-  color: #428bca;
+  color: #825cad;
   text-decoration: none;
 }
 
@@ -82,6 +82,11 @@ a.article-title:hover {
 .account-heading {
   font-size: 2.5rem;
 }
+
+.list-group-item {
+  background: #494949;
+}
+
 
 
 

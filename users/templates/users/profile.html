@@ -7,10 +7,10 @@
             <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
             <div class="media-body">
                 <h2 class="account-heading">{{ user.username }}</h2>
-                <p class="text-secondary">{{ user.email }}</p>
-                <p class="text-secondary">Symbol : {{ user.profile.symbol }}</p>
-                <p class="text-secondary">Score : {{ user.profile.score }}</p>
-                <p class="text-secondary">Game Played : {{ user.profile.game_played }}</p>
+                <p class="text-white">{{ user.email }}</p>
+                <p class="text-info">Symbol : {{ user.profile.symbol }}</p>
+                <p class="text-info">Score : {{ user.profile.score }}</p>
+                <p class="text-info">Game Played : {{ user.profile.game_played }}</p>
             </div>
         </div>
         <form method="POST" enctype="multipart/form-data">

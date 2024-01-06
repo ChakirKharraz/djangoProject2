@@ -1,62 +1,10 @@
 {% extends "blog/base.html" %}
 {% load crispy_forms_filters %}
+{% load static %}
 {% load crispy_forms_tags %}
 {% block content %}
 
-    <style>
-        #global-rankings p {
-            margin: 5px 0;
-            padding: 5px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        #global-rankings p:last-child {
-            border-bottom: none;
-        }
-
-        #global-rankings p.current-user {
-            background-color: #3498db; /* Blue color for the current user */
-            color: #fff;
-            font-weight: bold;
-        }
-
-        #global-rankings p.no-rankings {
-            font-style: italic;
-            color: #888;
-        }
-
-
-        #custom-stats-results {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-
-        #custom-stats-results p {
-            margin: 5px 0;
-            padding: 5px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        #custom-stats-results p:last-child {
-            border-bottom: none;
-        }
-
-        #custom-stats-results p.current-user {
-            background-color: #3498db; /* Blue color for the current user */
-            color: #fff;
-            font-weight: bold;
-        }
-
-        #custom-stats-results p.no-rankings {
-            font-style: italic;
-            color: #888;
-        }
-    </style>
-
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/stats.css' %}">
 
     <h2>History</h2>
 

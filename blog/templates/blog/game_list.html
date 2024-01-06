@@ -7,17 +7,17 @@
                 {% for game in games %}
                     <li class="list-group-item">
                         {{ game.title }} - {{ game.game_author.username }}
-                        <small class="text-muted">G{{ game.grid_size }}A{{ game.win_size }}</small>
+                        <small class="text-info">G{{ game.grid_size }}A{{ game.win_size }}</small>
                         {% if game.private %}
-                            <small class="text-muted">Private</small>
+                            <small class="text-info">Private</small>
                         {% else %}
-                            <small class="text-muted">Public</small>
+                            <small class="text-info">Public</small>
                         {% endif %}
 
                         {% if request.user == game.game_author or request.user == game.game_player2 %}
                             <a href="{% url 'join-game' game_id=game.id %}" class="btn btn-primary btn-sm">Join</a>
                         {% elif game.game_player2 %}
-                            <span class="text-muted">GAME ALREADY FULL</span>
+                            <span class="text-danger">GAME ALREADY FULL</span>
                         {% else %}
                             <a href="{% url 'join-game' game_id=game.id %}" class="btn btn-primary btn-sm">Join</a>
                         {% endif %}
